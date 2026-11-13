@@ -148,6 +148,8 @@ int main() {
     );
     ImGui::Render();
     TestRunner::assert_true(true, "CustomerDetailView handles customer with zero orders cleanly");
+    TestRunner::assert_true(detailView.getCurrentCustomerId() == cust2.getId(), "CustomerDetailView tracked current customer ID for cust2");
+    TestRunner::assert_true(!detailView.isEditingBasicInfo(), "CustomerDetailView resets edit mode when switching customers");
 
     // 8. Test DashboardView
     App::UI::DashboardView dashboardView;

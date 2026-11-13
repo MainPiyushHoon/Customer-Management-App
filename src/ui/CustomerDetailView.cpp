@@ -14,8 +14,15 @@ namespace App::UI {
         const std::function<void(Core::OrderId)>& onEditOrderClick
     ) {
         if (!customer) {
+            m_currentCustomerId = 0;
+            m_isEditingBasicInfo = false;
             ImGui::TextDisabled("Select a customer from the left list to view details and measurements.");
             return;
+        }
+
+        if (customer->getId() != m_currentCustomerId) {
+            m_currentCustomerId = customer->getId();
+            m_isEditingBasicInfo = false;
         }
 
         // Customer Header Card

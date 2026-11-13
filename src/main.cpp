@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
 
 int main() {
     std::filesystem::create_directories("data");
@@ -67,6 +68,17 @@ int main() {
     jsonStorage.loadCustomers(customerMgr.getAllCustomers(), App::Core::AppConfig::CustomersJsonPath);
     jsonStorage.loadOrders(orderMgr.getAllOrders(), App::Core::AppConfig::OrdersJsonPath);
 
+    // Save Lambda
+    auto performSave = [&]() {
+        jsonStorage.saveCustomers(customerMgr.getAllCustomers(), App::Core::AppConfig::CustomersJsonPath);
+        jsonStorage.saveOrders(orderMgr.getAllOrders(), App::Core::AppConfig::OrdersJsonPath);
+        excelStorage.exportToSpreadsheet(
+            customerMgr.getAllCustomers(),
+            orderMgr.getAllOrders(),
+            App::Core::AppConfig::ExcelCsvExportPath
+        );
+    };
+
     // Seed sample data if empty
     if (customerMgr.getAllCustomers().empty()) {
         auto& c1 = customerMgr.createCustomer("Marcus Sterling", "+1 202-555-0143");
@@ -92,18 +104,9 @@ int main() {
             App::Core::OrderStatus::Completed, "Delivered via courier"
         );
         c2.addOrderId(o2.getId());
-    }
 
-    // Save Lambda
-    auto performSave = [&]() {
-        jsonStorage.saveCustomers(customerMgr.getAllCustomers(), App::Core::AppConfig::CustomersJsonPath);
-        jsonStorage.saveOrders(orderMgr.getAllOrders(), App::Core::AppConfig::OrdersJsonPath);
-        excelStorage.exportToSpreadsheet(
-            customerMgr.getAllCustomers(),
-            orderMgr.getAllOrders(),
-            App::Core::AppConfig::ExcelCsvExportPath
-        );
-    };
+        performSave();
+    }
 
     // UI Modules
     App::UI::ThemeManager themeMgr;
@@ -217,8 +220,13 @@ int main() {
 
         // Order Modal
         orderModalView.render(orderMgr, [&](const App::Models::Order& savedOrd) {
-            if (activeCustomer) {
-                activeCustomer->addOrderId(savedOrd.getId());
+            auto custOpt = customerMgr.findByIdMut(savedOrd.getCustomerId());
+            if (custOpt) {
+                auto& cust = custOpt->get();
+                const auto& orderIds = cust.getOrderIds();
+                if (std::find(orderIds.begin(), orderIds.end(), savedOrd.getId()) == orderIds.end()) {
+                    cust.addOrderId(savedOrd.getId());
+                }
             }
             performSave();
         });
