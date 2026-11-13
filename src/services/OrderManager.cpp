@@ -75,6 +75,11 @@ namespace App::Services {
     }
 
     Core::OrderId OrderManager::generateNextId() {
+        for (const auto& o : m_orders) {
+            if (o.getId() >= m_nextId) {
+                m_nextId = o.getId() + 1;
+            }
+        }
         return m_nextId++;
     }
 

@@ -16,7 +16,9 @@ namespace App::UI {
 
         ImGui::SameLine();
         if (NeoWidgets::BrutalistButton("+ NEW CUSTOMER", 150.0f, 34.0f, 0xFF00E6FF)) {
-            onAddNewCustomerClick();
+            if (onAddNewCustomerClick) {
+                onAddNewCustomerClick();
+            }
         }
 
         ImGui::Separator();
@@ -37,7 +39,9 @@ namespace App::UI {
                 ImGui::TableSetColumnIndex(0);
                 std::string idStr = "#" + std::to_string(c->getId());
                 if (ImGui::Selectable(idStr.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns)) {
-                    onSelectCustomer(c->getId());
+                    if (onSelectCustomer) {
+                        onSelectCustomer(c->getId());
+                    }
                 }
 
                 ImGui::TableSetColumnIndex(1);

@@ -162,14 +162,18 @@ namespace App::UI {
                         ord.setStatus(static_cast<Core::OrderStatus>(m_statusIndex));
                         ord.setNotes(m_notes);
                         ord.setItems(m_lineItems);
-                        onOrderSaved(ord);
+                        if (onOrderSaved) {
+                            onOrderSaved(ord);
+                        }
                     }
                 } else {
                     auto& newOrd = orderMgr.createOrder(
                         m_customerId, m_customerName, m_orderDate, m_lineItems,
                         static_cast<Core::OrderStatus>(m_statusIndex), m_notes
                     );
-                    onOrderSaved(newOrd);
+                    if (onOrderSaved) {
+                        onOrderSaved(newOrd);
+                    }
                 }
                 close();
             }

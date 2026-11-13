@@ -68,6 +68,11 @@ namespace App::Services {
     }
 
     Core::CustomerId CustomerManager::generateNextId() {
+        for (const auto& c : m_customers) {
+            if (c.getId() >= m_nextId) {
+                m_nextId = c.getId() + 1;
+            }
+        }
         return m_nextId++;
     }
 

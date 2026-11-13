@@ -26,7 +26,9 @@ namespace App::UI {
         ImGui::SameLine();
         // Manual Save Button
         if (NeoWidgets::BrutalistButton("SAVE NOW (JSON/EXCEL)", 190.0f, 26.0f, 0xFF9DFF00)) {
-            onManualSaveClick();
+            if (onManualSaveClick) {
+                onManualSaveClick();
+            }
         }
 
         ImGui::SameLine();

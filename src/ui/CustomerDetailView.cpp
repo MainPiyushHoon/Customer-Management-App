@@ -19,9 +19,9 @@ namespace App::UI {
         }
 
         // Customer Header Card
-        NeoWidgets::BeginBrutalistCard("CustHeader", 0.0f, 110.0f, 0xFFFFFFFF);
+        NeoWidgets::BeginBrutalistCard("CustHeader", 0.0f, 110.0f, 0);
         if (!m_isEditingBasicInfo) {
-            ImGui::TextColored(ImVec4(0, 0, 0, 1), "CUSTOMER #%llu: %s", static_cast<unsigned long long>(customer->getId()), customer->getName().c_str());
+            ImGui::Text("CUSTOMER #%llu: %s", static_cast<unsigned long long>(customer->getId()), customer->getName().c_str());
             ImGui::Text("PHONE: %s", customer->getPhone().c_str());
             ImGui::Text("ORDERS PLACED: %zu", customer->getOrderIds().size());
 
@@ -51,7 +51,7 @@ namespace App::UI {
         ImGui::Spacing();
 
         // Editable Measurements Section
-        ImGui::TextColored(ImVec4(0, 0, 0, 1), "MEASUREMENTS (DYNAMIC & EDITABLE)");
+        ImGui::TextUnformatted("MEASUREMENTS (DYNAMIC & EDITABLE)");
         if (ImGui::BeginTable("MeasTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
             ImGui::TableSetupColumn("Measurement Type", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
@@ -125,10 +125,12 @@ namespace App::UI {
         ImGui::Separator();
 
         // Customer's Orders Section
-        ImGui::TextColored(ImVec4(0, 0, 0, 1), "ORDERS PLACED BY THIS CUSTOMER");
+        ImGui::TextUnformatted("ORDERS PLACED BY THIS CUSTOMER");
         ImGui::SameLine();
         if (NeoWidgets::BrutalistButton("+ PLACE NEW ORDER", 170.0f, 28.0f, 0xFF9DFF00)) {
-            onNewOrderClick(customer->getId());
+            if (onNewOrderClick) {
+                onNewOrderClick(customer->getId());
+            }
         }
 
         auto orders = orderMgr.getOrdersForCustomer(customer->getId());
@@ -160,7 +162,9 @@ namespace App::UI {
                     ImGui::TableSetColumnIndex(4);
                     ImGui::PushID(static_cast<int>(ord->getId()));
                     if (ImGui::Button("VIEW")) {
-                        onEditOrderClick(ord->getId());
+                        if (onEditOrderClick) {
+                            onEditOrderClick(ord->getId());
+                        }
                     }
                     ImGui::PopID();
                 }
