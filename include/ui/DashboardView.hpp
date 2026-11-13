@@ -3,6 +3,7 @@
 #include "services/DashboardStats.hpp"
 #include "storage/AutoSaveCoordinator.hpp"
 #include "ui/ThemeManager.hpp"
+#include <functional>
 
 namespace App::UI {
 
@@ -14,7 +15,10 @@ namespace App::UI {
             const Services::DashboardMetrics& metrics,
             Storage::AutoSaveCoordinator& autoSave,
             ThemeManager& themeMgr,
-            const std::function<void()>& onManualSaveClick
+            const std::function<void()>& onManualSaveClick,
+            const std::function<void(ViewTab)>& onNavigateTab = nullptr,
+            const std::function<void()>& onAddNewCustomerClick = nullptr,
+            const std::function<void()>& onAddNewOrderClick = nullptr
         );
     };
 

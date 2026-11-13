@@ -1,8 +1,10 @@
 #pragma once
 
 #include "models/Order.hpp"
+#include "models/Customer.hpp"
 #include "services/OrderManager.hpp"
 #include <functional>
+#include <vector>
 
 namespace App::UI {
 
@@ -10,16 +12,19 @@ namespace App::UI {
     public:
         OrderModalView() = default;
 
-        void openCreate(Core::CustomerId customerId, const std::string& customerName);
+        void openCreate(Core::CustomerId customerId = 0, const std::string& customerName = "");
         void openEdit(const Models::Order& order);
         void close();
 
         void render(
             Services::OrderManager& orderMgr,
-            const std::function<void(const Models::Order&)>& onOrderSaved
+            const std::function<void(const Models::Order&)>& onOrderSaved,
+            const std::vector<Models::Customer>* allCustomers = nullptr
         );
 
         [[nodiscard]] bool isOpen() const { return m_isOpen; }
+        [[nodiscard]] Core::OrderId getOrderId() const { return m_orderId; }
+        [[nodiscard]] const std::vector<Models::OrderItem>& getLineItems() const { return m_lineItems; }
 
     private:
         bool m_isOpen = false;

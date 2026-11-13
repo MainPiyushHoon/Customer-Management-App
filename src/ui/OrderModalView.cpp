@@ -2,11 +2,11 @@
 #include "ui/OrderModalView.hpp"
 #include "ui/NeoWidgets.hpp"
 #include "imgui.h"
-#include <chrono>
 #include <ctime>
-#include <cstring>
 #include <iomanip>
 #include <sstream>
+#include <cstring>
+#include <algorithm>
 
 namespace App::UI {
 
@@ -29,8 +29,7 @@ namespace App::UI {
 #endif
         std::ostringstream ss;
         ss << std::put_time(&tmNow, "%Y-%m-%d %H:%M");
-        std::string dateStr = ss.str();
-        std::strncpy(m_orderDate, dateStr.c_str(), sizeof(m_orderDate) - 1);
+        std::strncpy(m_orderDate, ss.str().c_str(), sizeof(m_orderDate) - 1);
         m_orderDate[sizeof(m_orderDate) - 1] = '\0';
 
         m_newItemName[0] = '\0';
@@ -49,7 +48,7 @@ namespace App::UI {
         m_orderDate[sizeof(m_orderDate) - 1] = '\0';
         std::strncpy(m_notes, order.getNotes().c_str(), sizeof(m_notes) - 1);
         m_notes[sizeof(m_notes) - 1] = '\0';
-        m_statusIndex = static_cast<int>(order.getStatus());
+        m_statusIndex = std::clamp(static_cast<int>(order.getStatus()), 0, 4);
 
         m_newItemName[0] = '\0';
         m_newItemQty = 1;
@@ -62,12 +61,13 @@ namespace App::UI {
 
     void OrderModalView::render(
         Services::OrderManager& orderMgr,
-        const std::function<void(const Models::Order&)>& onOrderSaved
+        const std::function<void(const Models::Order&)>& onOrderSaved,
+        const std::vector<Models::Customer>* allCustomers
     ) {
         if (!m_isOpen) return;
 
         ImGui::OpenPopup("OrderDialog");
-        ImGui::SetNextWindowSize(ImVec2(620, 540), ImGuiCond_Appearing);
+        ImGui::SetNextWindowSize(ImVec2(660, 560), ImGuiCond_Appearing);
 
         if (ImGui::BeginPopupModal("OrderDialog", &m_isOpen, ImGuiWindowFlags_NoResize)) {
             if (m_isEditMode) {
@@ -75,7 +75,24 @@ namespace App::UI {
             } else {
                 ImGui::TextUnformatted("CREATE NEW ORDER");
             }
-            ImGui::Text("Customer: %s (ID: #%llu)", m_customerName.c_str(), static_cast<unsigned long long>(m_customerId));
+
+            if (m_customerId == 0 && allCustomers && !allCustomers->empty()) {
+                std::string preview = m_customerName.empty() ? "-- Select Customer --" : (m_customerName + " (#" + std::to_string(m_customerId) + ")");
+                if (ImGui::BeginCombo("Select Customer", preview.c_str())) {
+                    for (const auto& cust : *allCustomers) {
+                        bool isSelected = (cust.getId() == m_customerId);
+                        std::string label = cust.getName() + " (#" + std::to_string(cust.getId()) + ")";
+                        if (ImGui::Selectable(label.c_str(), isSelected)) {
+                            m_customerId = cust.getId();
+                            m_customerName = cust.getName();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            } else {
+                ImGui::Text("Customer: %s (ID: #%llu)", m_customerName.c_str(), static_cast<unsigned long long>(m_customerId));
+            }
+
             ImGui::InputText("Order Date", m_orderDate, sizeof(m_orderDate));
 
             const char* statuses[] = { "Pending", "In Progress", "Completed", "Delivered", "Cancelled" };
@@ -116,11 +133,12 @@ namespace App::UI {
 
                     ImGui::PopID();
                 }
-                ImGui::EndTable();
 
                 if (deleteItemIdx >= 0 && deleteItemIdx < static_cast<int>(m_lineItems.size())) {
                     m_lineItems.erase(m_lineItems.begin() + deleteItemIdx);
                 }
+
+                ImGui::EndTable();
             }
 
             // New Line Item Row
@@ -142,40 +160,37 @@ namespace App::UI {
             }
 
             double grandTotal = 0.0;
-            for (const auto& item : m_lineItems) {
-                grandTotal += item.getTotalPrice();
-            }
+            for (const auto& item : m_lineItems) grandTotal += item.getTotalPrice();
             ImGui::Text("ORDER GRAND TOTAL: $%.2f", grandTotal);
 
             ImGui::InputTextMultiline("Notes / Instructions", m_notes, sizeof(m_notes), ImVec2(-1, 50));
 
             ImGui::Spacing();
             if (NeoWidgets::BrutalistButton("SAVE ORDER", 140.0f, 36.0f, 0xFF9DFF00)) {
-                if (m_statusIndex < 0 || m_statusIndex >= 5) {
-                    m_statusIndex = 0;
-                }
-                if (m_isEditMode) {
-                    auto opt = orderMgr.findByIdMut(m_orderId);
-                    if (opt) {
-                        auto& ord = opt->get();
-                        ord.setOrderDate(m_orderDate);
-                        ord.setStatus(static_cast<Core::OrderStatus>(m_statusIndex));
-                        ord.setNotes(m_notes);
-                        ord.setItems(m_lineItems);
+                if (m_customerId != 0) {
+                    if (m_isEditMode) {
+                        auto opt = orderMgr.findByIdMut(m_orderId);
+                        if (opt) {
+                            auto& ord = opt->get();
+                            ord.setOrderDate(m_orderDate);
+                            ord.setStatus(static_cast<Core::OrderStatus>(m_statusIndex));
+                            ord.setNotes(m_notes);
+                            ord.setItems(m_lineItems);
+                            if (onOrderSaved) {
+                                onOrderSaved(ord);
+                            }
+                        }
+                    } else {
+                        auto& newOrd = orderMgr.createOrder(
+                            m_customerId, m_customerName, m_orderDate, m_lineItems,
+                            static_cast<Core::OrderStatus>(m_statusIndex), m_notes
+                        );
                         if (onOrderSaved) {
-                            onOrderSaved(ord);
+                            onOrderSaved(newOrd);
                         }
                     }
-                } else {
-                    auto& newOrd = orderMgr.createOrder(
-                        m_customerId, m_customerName, m_orderDate, m_lineItems,
-                        static_cast<Core::OrderStatus>(m_statusIndex), m_notes
-                    );
-                    if (onOrderSaved) {
-                        onOrderSaved(newOrd);
-                    }
+                    close();
                 }
-                close();
             }
 
             ImGui::SameLine();

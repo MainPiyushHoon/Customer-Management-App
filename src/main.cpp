@@ -10,6 +10,7 @@
 #include "ui/DashboardView.hpp"
 #include "ui/CustomerListView.hpp"
 #include "ui/CustomerDetailView.hpp"
+#include "ui/OrdersView.hpp"
 #include "ui/OrderModalView.hpp"
 #include "ui/NeoWidgets.hpp"
 
@@ -53,6 +54,23 @@ int main() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // Load Bold Industrial Brutalist Fonts (Arial 18px body, Arial Bold 24px headers)
+    ImFont* bodyFont = nullptr;
+    ImFont* headerFont = nullptr;
+
+    if (std::filesystem::exists("C:\\Windows\\Fonts\\arial.ttf")) {
+        bodyFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 18.0f);
+    }
+    if (std::filesystem::exists("C:\\Windows\\Fonts\\arialbd.ttf")) {
+        headerFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arialbd.ttf", 24.0f);
+    }
+    if (!bodyFont) {
+        bodyFont = io.Fonts->AddFontDefault();
+    }
+    if (!headerFont) {
+        headerFont = bodyFont;
+    }
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
@@ -112,13 +130,17 @@ int main() {
 
     // UI Modules
     App::UI::ThemeManager themeMgr;
+    themeMgr.setBodyFont(bodyFont);
+    themeMgr.setHeaderFont(headerFont);
     themeMgr.applyStyle();
 
     App::UI::DashboardView dashboardView;
     App::UI::CustomerListView customerListView;
     App::UI::CustomerDetailView customerDetailView;
+    App::UI::OrdersView ordersView;
     App::UI::OrderModalView orderModalView;
 
+    App::UI::ViewTab currentTab = App::UI::ViewTab::Dashboard;
     App::Core::CustomerId selectedCustomerId = customerMgr.getAllCustomers().empty() ? 0 : customerMgr.getAllCustomers().front().getId();
     bool showAddCustomerDialog = false;
     char newCustName[128] = "";
@@ -142,7 +164,7 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Fullscreen dockable background window
+        // Fullscreen host window
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -150,49 +172,130 @@ int main() {
 
         ImGui::Begin("NeoBrutalistWorkspace", nullptr, hostFlags);
 
-        // Dashboard Metrics Header
-        auto metrics = App::Services::DashboardStats::compute(customerMgr, orderMgr);
-        dashboardView.render(metrics, autoSave, themeMgr, [&]() {
+        // 1. TOP NEO-BRUTALIST NAVBAR
+        ImGui::BeginChild("TopNavbar", ImVec2(0, 56.0f), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar);
+
+        // App Brand Header
+        if (themeMgr.getHeaderFont()) ImGui::PushFont(themeMgr.getHeaderFont());
+        ImGui::TextUnformatted("BRUTAL // OPS");
+        if (themeMgr.getHeaderFont()) ImGui::PopFont();
+
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 24.0f);
+
+        // Navigation Tab Buttons
+        bool isDash = (currentTab == App::UI::ViewTab::Dashboard);
+        bool isCust = (currentTab == App::UI::ViewTab::Customers);
+        bool isOrd = (currentTab == App::UI::ViewTab::Orders);
+
+        if (App::UI::NeoWidgets::BrutalistButton("01 // DASHBOARD", 180.0f, 38.0f, isDash ? 0xFF00E6FF : 0)) {
+            currentTab = App::UI::ViewTab::Dashboard;
+        }
+        ImGui::SameLine();
+        if (App::UI::NeoWidgets::BrutalistButton("02 // CUSTOMERS", 180.0f, 38.0f, isCust ? 0xFF00E6FF : 0)) {
+            currentTab = App::UI::ViewTab::Customers;
+        }
+        ImGui::SameLine();
+        if (App::UI::NeoWidgets::BrutalistButton("03 // ORDERS", 160.0f, 38.0f, isOrd ? 0xFF00E6FF : 0)) {
+            currentTab = App::UI::ViewTab::Orders;
+        }
+
+        // Right side of Navbar: Theme Toggle, Save Button, Auto-save Badge
+        float rightControlsWidth = 460.0f;
+        float availX = ImGui::GetWindowWidth();
+        if (availX > rightControlsWidth + 600.0f) {
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(availX - rightControlsWidth - 16.0f);
+        } else {
+            ImGui::SameLine();
+        }
+
+        // Theme Toggle
+        std::string themeLabel = themeMgr.isDark() ? "LIGHT MODE" : "DARK MODE";
+        if (App::UI::NeoWidgets::BrutalistButton(themeLabel.c_str(), 110.0f, 32.0f, 0xFFFFF000)) {
+            themeMgr.toggleMode();
+        }
+
+        ImGui::SameLine();
+        // Manual Save Button
+        if (App::UI::NeoWidgets::BrutalistButton("SAVE NOW", 110.0f, 32.0f, 0xFF9DFF00)) {
             autoSave.forceSave(performSave);
-        });
+        }
 
-        // Main Layout Columns (Left: Customer List, Right: Details & Measurements)
-        float contentW = ImGui::GetContentRegionAvail().x;
-        float leftColW = 380.0f;
-        float rightColW = contentW - leftColW - 16.0f;
+        ImGui::SameLine();
+        // Auto-save countdown pill badge
+        char autoSavePill[64];
+        std::snprintf(autoSavePill, sizeof(autoSavePill), "AUTOSAVE: %ds", autoSave.getSecondsRemaining());
+        App::UI::NeoWidgets::BrutalistBadge(autoSavePill, 0xFF00E6FF);
 
-        ImGui::Columns(2, "MainColumns", false);
-        ImGui::SetColumnWidth(0, leftColW);
-        ImGui::SetColumnWidth(1, rightColW);
+        ImGui::EndChild();
 
-        // Left Column: Customer List
-        customerListView.render(
-            customerMgr,
-            selectedCustomerId,
-            [&](App::Core::CustomerId id) { selectedCustomerId = id; },
-            [&]() { showAddCustomerDialog = true; }
-        );
+        ImGui::Spacing();
 
-        ImGui::NextColumn();
+        // 2. ACTIVE VIEW CONTENT (BASED ON NAVBAR SELECTION)
+        if (currentTab == App::UI::ViewTab::Dashboard) {
+            auto metrics = App::Services::DashboardStats::compute(customerMgr, orderMgr);
+            dashboardView.render(
+                metrics, autoSave, themeMgr,
+                [&]() { autoSave.forceSave(performSave); },
+                [&](App::UI::ViewTab targetTab) { currentTab = targetTab; },
+                [&]() { showAddCustomerDialog = true; },
+                [&]() { orderModalView.openCreate(0, ""); }
+            );
+        } else if (currentTab == App::UI::ViewTab::Customers) {
+            float contentW = ImGui::GetContentRegionAvail().x;
+            float leftColW = 420.0f;
+            float rightColW = contentW - leftColW - 16.0f;
 
-        // Right Column: Customer Details & Dynamic Measurements
-        auto custOpt = customerMgr.findByIdMut(selectedCustomerId);
-        App::Models::Customer* activeCustomer = custOpt ? &custOpt->get() : nullptr;
+            ImGui::Columns(2, "MainColumns", false);
+            ImGui::SetColumnWidth(0, leftColW);
+            ImGui::SetColumnWidth(1, rightColW);
 
-        customerDetailView.render(
-            activeCustomer,
-            customerMgr,
-            orderMgr,
-            [&](App::Core::CustomerId cId) {
-                if (activeCustomer) orderModalView.openCreate(cId, activeCustomer->getName());
-            },
-            [&](App::Core::OrderId oId) {
-                auto oOpt = orderMgr.findById(oId);
-                if (oOpt) orderModalView.openEdit(oOpt->get());
-            }
-        );
+            // Left Column: Customer List
+            customerListView.render(
+                customerMgr,
+                selectedCustomerId,
+                [&](App::Core::CustomerId id) { selectedCustomerId = id; },
+                [&]() { showAddCustomerDialog = true; }
+            );
 
-        ImGui::Columns(1);
+            ImGui::NextColumn();
+
+            // Right Column: Customer Details & Dynamic Measurements
+            auto custOpt = customerMgr.findByIdMut(selectedCustomerId);
+            App::Models::Customer* activeCustomer = custOpt ? &custOpt->get() : nullptr;
+
+            customerDetailView.render(
+                activeCustomer,
+                customerMgr,
+                orderMgr,
+                [&](App::Core::CustomerId cId) {
+                    if (activeCustomer) orderModalView.openCreate(cId, activeCustomer->getName());
+                },
+                [&](App::Core::OrderId oId) {
+                    auto oOpt = orderMgr.findById(oId);
+                    if (oOpt) orderModalView.openEdit(oOpt->get());
+                },
+                [&]() {
+                    // Instant save callback when measurements or customer info are saved
+                    performSave();
+                }
+            );
+
+            ImGui::Columns(1);
+        } else if (currentTab == App::UI::ViewTab::Orders) {
+            ordersView.render(
+                customerMgr,
+                orderMgr,
+                [&](App::Core::OrderId oId) {
+                    auto oOpt = orderMgr.findById(oId);
+                    if (oOpt) orderModalView.openEdit(oOpt->get());
+                },
+                [&]() {
+                    orderModalView.openCreate(0, "");
+                }
+            );
+        }
 
         // Add Customer Modal Dialog
         if (showAddCustomerDialog) {
@@ -221,17 +324,21 @@ int main() {
         }
 
         // Order Modal
-        orderModalView.render(orderMgr, [&](const App::Models::Order& savedOrd) {
-            auto custOpt = customerMgr.findByIdMut(savedOrd.getCustomerId());
-            if (custOpt) {
-                auto& cust = custOpt->get();
-                const auto& orderIds = cust.getOrderIds();
-                if (std::find(orderIds.begin(), orderIds.end(), savedOrd.getId()) == orderIds.end()) {
-                    cust.addOrderId(savedOrd.getId());
+        orderModalView.render(
+            orderMgr,
+            [&](const App::Models::Order& savedOrd) {
+                auto custOpt = customerMgr.findByIdMut(savedOrd.getCustomerId());
+                if (custOpt) {
+                    auto& cust = custOpt->get();
+                    const auto& orderIds = cust.getOrderIds();
+                    if (std::find(orderIds.begin(), orderIds.end(), savedOrd.getId()) == orderIds.end()) {
+                        cust.addOrderId(savedOrd.getId());
+                    }
                 }
-            }
-            performSave();
-        });
+                performSave();
+            },
+            &customerMgr.getAllCustomers()
+        );
 
         ImGui::End();
 

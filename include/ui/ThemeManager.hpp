@@ -2,11 +2,19 @@
 
 #include <cstdint>
 
+struct ImFont;
+
 namespace App::UI {
 
     enum class NeoThemeMode {
         Light,
         Dark
+    };
+
+    enum class ViewTab {
+        Dashboard,
+        Customers,
+        Orders
     };
 
     struct NeoPalette {
@@ -37,10 +45,18 @@ namespace App::UI {
         // Applies Dear ImGui style colors and geometric metrics
         void applyStyle();
 
+        // Typography accessors
+        void setBodyFont(ImFont* font) { m_bodyFont = font; }
+        void setHeaderFont(ImFont* font) { m_headerFont = font; }
+        [[nodiscard]] ImFont* getBodyFont() const { return m_bodyFont; }
+        [[nodiscard]] ImFont* getHeaderFont() const { return m_headerFont; }
+
     private:
         NeoThemeMode m_currentMode = NeoThemeMode::Light;
         NeoPalette m_lightPalette;
         NeoPalette m_darkPalette;
+        ImFont* m_bodyFont = nullptr;
+        ImFont* m_headerFont = nullptr;
     };
 
 } // namespace App::UI

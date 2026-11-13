@@ -16,11 +16,13 @@ namespace App::UI {
             Services::CustomerManager& customerMgr,
             Services::OrderManager& orderMgr,
             const std::function<void(Core::CustomerId)>& onNewOrderClick,
-            const std::function<void(Core::OrderId)>& onEditOrderClick
+            const std::function<void(Core::OrderId)>& onEditOrderClick,
+            const std::function<void()>& onSaveCustomerData = nullptr
         );
 
         [[nodiscard]] bool isEditingBasicInfo() const { return m_isEditingBasicInfo; }
         [[nodiscard]] Core::CustomerId getCurrentCustomerId() const { return m_currentCustomerId; }
+        [[nodiscard]] bool wasMeasurementSavedRecently() const { return m_showSaveSuccessBadge; }
 
     private:
         char m_editName[128] = "";
@@ -30,6 +32,8 @@ namespace App::UI {
         char m_newMeasUnit[32] = "";
         bool m_isEditingBasicInfo = false;
         Core::CustomerId m_currentCustomerId = 0;
+        bool m_showSaveSuccessBadge = false;
+        float m_saveSuccessTimer = 0.0f;
     };
 
 } // namespace App::UI
