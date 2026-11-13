@@ -31,13 +31,9 @@ namespace App::Services {
     }
 
     bool OrderManager::deleteOrder(Core::OrderId id) {
-        auto it = std::remove_if(m_orders.begin(), m_orders.end(),
-            [id](const Models::Order& o) { return o.getId() == id; });
-        if (it != m_orders.end()) {
-            m_orders.erase(it, m_orders.end());
-            return true;
-        }
-        return false;
+        return std::erase_if(m_orders, [id](const Models::Order& o) {
+            return o.getId() == id;
+        }) > 0;
     }
 
     std::optional<std::reference_wrapper<const Models::Order>> OrderManager::findById(Core::OrderId id) const {

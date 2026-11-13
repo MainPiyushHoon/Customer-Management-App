@@ -84,7 +84,7 @@ namespace App::UI {
             ImGui::Separator();
             ImGui::TextUnformatted("ORDERED ITEMS:");
 
-            if (ImGui::BeginTable("OrderItemsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            if (ImGui::BeginTable("OrderItemsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0.0f, 150.0f))) {
                 ImGui::TableSetupColumn("Item Name", ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableSetupColumn("Qty", ImGuiTableColumnFlags_WidthFixed, 50.0f);
                 ImGui::TableSetupColumn("Price", ImGuiTableColumnFlags_WidthFixed, 80.0f);
@@ -133,7 +133,7 @@ namespace App::UI {
             ImGui::InputDouble("##ItemPrice", &m_newItemPrice, 0.0, 0.0, "%.2f");
             ImGui::SameLine();
             if (NeoWidgets::BrutalistButton("+ ADD ITEM", 100.0f, 28.0f, 0xFF00E6FF)) {
-                if (m_newItemName[0] != '\0' && m_newItemQty > 0) {
+                if (m_newItemName[0] != '\0' && m_newItemQty > 0 && m_newItemPrice >= 0.0) {
                     m_lineItems.emplace_back(m_newItemName, m_newItemQty, m_newItemPrice);
                     m_newItemName[0] = '\0';
                     m_newItemQty = 1;

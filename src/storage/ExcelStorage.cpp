@@ -9,7 +9,8 @@ namespace App::Storage {
     static std::string escapeCsv(const std::string& text) {
         bool needsQuotes = text.find(',') != std::string::npos || 
                            text.find('"') != std::string::npos || 
-                           text.find('\n') != std::string::npos;
+                           text.find('\n') != std::string::npos ||
+                           text.find('\r') != std::string::npos;
         if (!needsQuotes) return text;
         std::string result = "\"";
         for (char c : text) {

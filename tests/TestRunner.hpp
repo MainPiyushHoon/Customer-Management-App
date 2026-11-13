@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 namespace TestRunner {
     inline int passed = 0;
@@ -13,6 +14,16 @@ namespace TestRunner {
             passed++;
         } else {
             std::cerr << "  [FAIL] " << message << "\n";
+            failed++;
+        }
+    }
+
+    inline void assert_near(double actual, double expected, const std::string& message, double eps = 1e-4) {
+        if (std::abs(actual - expected) <= eps) {
+            std::cout << "  [PASS] " << message << "\n";
+            passed++;
+        } else {
+            std::cerr << "  [FAIL] " << message << " (expected: " << expected << ", actual: " << actual << ")\n";
             failed++;
         }
     }

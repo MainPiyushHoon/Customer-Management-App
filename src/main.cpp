@@ -82,6 +82,7 @@ int main() {
     // Seed sample data if empty
     if (customerMgr.getAllCustomers().empty()) {
         auto& c1 = customerMgr.createCustomer("Marcus Sterling", "+1 202-555-0143");
+        c1.setCreatedAt("2026-11-13 10:00");
         c1.addMeasurement({"Chest", "42", "in"});
         c1.addMeasurement({"Waist", "34", "in"});
         c1.addMeasurement({"Shoulder", "18.5", "in"});
@@ -95,6 +96,7 @@ int main() {
         c1.addOrderId(o1.getId());
 
         auto& c2 = customerMgr.createCustomer("Elena Rostova", "+1 312-555-0188");
+        c2.setCreatedAt("2026-11-12 09:30");
         c2.addMeasurement({"Bust", "36", "in"});
         c2.addMeasurement({"Waist", "28", "in"});
         c2.addMeasurement({"Hips", "38", "in"});

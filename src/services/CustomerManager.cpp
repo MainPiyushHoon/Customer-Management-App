@@ -2,13 +2,29 @@
 #include "services/CustomerManager.hpp"
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace App::Services {
 
     Models::Customer& CustomerManager::createCustomer(const std::string& name, const std::string& phone) {
         Core::CustomerId id = generateNextId();
-        m_customers.emplace_back(id, name, phone);
-        return m_customers.back();
+        auto& c = m_customers.emplace_back(id, name, phone);
+
+        auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        std::tm tmNow{};
+#if defined(_WIN32)
+        localtime_s(&tmNow, &now);
+#else
+        localtime_r(&now, &tmNow);
+#endif
+        std::ostringstream ss;
+        ss << std::put_time(&tmNow, "%Y-%m-%d %H:%M");
+        c.setCreatedAt(ss.str());
+
+        return c;
     }
 
     bool CustomerManager::updateCustomer(const Models::Customer& customer) {
@@ -22,13 +38,9 @@ namespace App::Services {
     }
 
     bool CustomerManager::deleteCustomer(Core::CustomerId id) {
-        auto it = std::remove_if(m_customers.begin(), m_customers.end(),
-            [id](const Models::Customer& c) { return c.getId() == id; });
-        if (it != m_customers.end()) {
-            m_customers.erase(it, m_customers.end());
-            return true;
-        }
-        return false;
+        return std::erase_if(m_customers, [id](const Models::Customer& c) {
+            return c.getId() == id;
+        }) > 0;
     }
 
     std::optional<std::reference_wrapper<const Models::Customer>> CustomerManager::findById(Core::CustomerId id) const {

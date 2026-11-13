@@ -159,8 +159,8 @@ int main() {
 
     TestRunner::assert_true(metrics.totalCustomers == 2, "DashboardMetrics: 2 customers");
     TestRunner::assert_true(metrics.activeOrders == 1, "DashboardMetrics: 1 active order");
-    TestRunner::assert_true(metrics.pendingRevenue == 500.0, "DashboardMetrics: $500.00 pending revenue");
-    TestRunner::assert_true(metrics.totalRevenue == 0.0, "DashboardMetrics: $0.00 completed revenue");
+    TestRunner::assert_near(metrics.pendingRevenue, 500.0, "DashboardMetrics: $500.00 pending revenue");
+    TestRunner::assert_near(metrics.totalRevenue, 0.0, "DashboardMetrics: $0.00 completed revenue");
     TestRunner::assert_true(autoSave.getSecondsRemaining() == 60, "AutoSave initial countdown is 60s");
 
     ImGui::NewFrame();
@@ -183,9 +183,9 @@ int main() {
     order1.setStatus(App::Core::OrderStatus::Completed);
     auto updatedMetrics = App::Services::DashboardStats::compute(customerMgr, orderMgr);
     TestRunner::assert_true(updatedMetrics.completedOrders == 1, "Updated metrics: 1 completed order");
-    TestRunner::assert_true(updatedMetrics.totalRevenue == 500.0, "Updated metrics: $500.00 total completed revenue");
+    TestRunner::assert_near(updatedMetrics.totalRevenue, 500.0, "Updated metrics: $500.00 total completed revenue");
     TestRunner::assert_true(updatedMetrics.activeOrders == 0, "Updated metrics: 0 active orders");
-    TestRunner::assert_true(updatedMetrics.pendingRevenue == 0.0, "Updated metrics: $0.00 pending pipeline");
+    TestRunner::assert_near(updatedMetrics.pendingRevenue, 0.0, "Updated metrics: $0.00 pending pipeline");
 
     ImGui::NewFrame();
     dashboardView.render(
@@ -233,14 +233,14 @@ int main() {
     for (const auto& it : order1.getItems()) {
         itemsTotal += it.getTotalPrice();
     }
-    TestRunner::assert_true(itemsTotal == 500.0, "Calculated line items total matches $500.00");
-    TestRunner::assert_true(order1.getTotalAmount() == itemsTotal, "order.getTotalAmount() matches line items sum");
+    TestRunner::assert_near(itemsTotal, 500.0, "Calculated line items total matches $500.00");
+    TestRunner::assert_near(order1.getTotalAmount(), itemsTotal, "order.getTotalAmount() matches line items sum");
 
     App::Models::OrderItem item3("Silk Tie", 2, 45.0);
-    TestRunner::assert_true(item3.getTotalPrice() == 90.0, "OrderItem calculates total price (2 * 45 = 90.0)");
+    TestRunner::assert_near(item3.getTotalPrice(), 90.0, "OrderItem calculates total price (2 * 45 = 90.0)");
     order1.addItem(item3);
     TestRunner::assert_true(order1.getItems().size() == 3, "order1 has 3 items after adding item3");
-    TestRunner::assert_true(order1.getTotalAmount() == 590.0, "order1 total amount updated to $590.00");
+    TestRunner::assert_near(order1.getTotalAmount(), 590.0, "order1 total amount updated to $590.00");
 
     orderModalView.close();
     TestRunner::assert_true(!orderModalView.isOpen(), "OrderModalView closed cleanly");

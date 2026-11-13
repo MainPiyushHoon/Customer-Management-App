@@ -19,8 +19,12 @@ int main() {
     App::Models::OrderItem item("Custom Suit", 2, 150.0);
     TestRunner::assert_true(item.getItemName() == "Custom Suit", "OrderItem name matches");
     TestRunner::assert_true(item.getQuantity() == 2, "OrderItem quantity matches");
-    TestRunner::assert_true(item.getUnitPrice() == 150.0, "OrderItem price matches");
-    TestRunner::assert_true(item.getTotalPrice() == 300.0, "OrderItem total price is 300");
+    TestRunner::assert_near(item.getUnitPrice(), 150.0, "OrderItem price matches");
+    TestRunner::assert_near(item.getTotalPrice(), 300.0, "OrderItem total price is 300");
+
+    App::Models::OrderItem clampedItem("Faulty Item", -3, -49.99);
+    TestRunner::assert_true(clampedItem.getQuantity() == 1, "OrderItem clamps negative quantity to 1");
+    TestRunner::assert_near(clampedItem.getUnitPrice(), 0.0, "OrderItem clamps negative unit price to 0.0");
 
     // Test Customer
     App::Models::Customer cust(1001, "Alice Doe", "+1 555-0199");
@@ -39,7 +43,7 @@ int main() {
     App::Models::OrderItem item2("Tie", 1, 25.0);
     order.addItem(item2);
     TestRunner::assert_true(order.getItems().size() == 2, "Order has 2 items");
-    TestRunner::assert_true(order.getTotalAmount() == 325.0, "Order total amount is 325");
+    TestRunner::assert_near(order.getTotalAmount(), 325.0, "Order total amount is 325");
     TestRunner::assert_true(order.getStatus() == App::Core::OrderStatus::Pending, "Default status is Pending");
     order.setStatus(App::Core::OrderStatus::InProgress);
     TestRunner::assert_true(order.getStatus() == App::Core::OrderStatus::InProgress, "Status updated to InProgress");

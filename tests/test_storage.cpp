@@ -45,7 +45,7 @@ int main() {
     std::vector<App::Models::Order> loadedOrd;
     bool jsonLoadedOrd = jsonStorage.loadOrders(loadedOrd, "test_data/test_orders.json");
     TestRunner::assert_true(jsonLoadedOrd && loadedOrd.size() == 1, "Orders loaded from JSON");
-    TestRunner::assert_true(loadedOrd[0].getTotalAmount() == 180.0, "Loaded order total matches");
+    TestRunner::assert_near(loadedOrd[0].getTotalAmount(), 180.0, "Loaded order total matches");
 
     // 2. Test Combined Excel/CSV export
     bool excelExported = excelStorage.exportToSpreadsheet(customers, orders, "test_data/test_export.csv");
@@ -82,6 +82,18 @@ int main() {
         TestRunner::assert_true(content.find("Order ID,Customer ID,Customer Name,Date") != std::string::npos, "Orders sheet has correct header");
         TestRunner::assert_true(content.find("Blazer") != std::string::npos, "Orders sheet contains order item data");
         TestRunner::assert_true(content.find("=== CUSTOMERS ===") == std::string::npos && content.find("Measurements Summary") == std::string::npos, "Orders sheet does not emit empty customers section banner or headers");
+    }
+
+    // Test RFC 4180 \r escape in CSV
+    std::vector<App::Models::Customer> rfcCust;
+    App::Models::Customer cRfc(202, "Bob\rBuilder", "+1 000-0000");
+    cRfc.setCreatedAt("2026-11-13 11:00");
+    rfcCust.push_back(cRfc);
+    excelStorage.exportCustomersSheet(rfcCust, "test_data/test_rfc_export.csv");
+    {
+        std::ifstream f("test_data/test_rfc_export.csv");
+        std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        TestRunner::assert_true(content.find("\"Bob\rBuilder\"") != std::string::npos, "CSV escapes text containing \\r in double quotes per RFC 4180");
     }
 
     // 4. Test AutoSaveCoordinator

@@ -35,10 +35,12 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-file(GLOB_RECURSE APP_SOURCES "${SRC_DIR}/*.cpp")
+file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS "${SRC_DIR}/*.cpp")
+file(GLOB_RECURSE APP_HEADERS CONFIGURE_DEPENDS "${INCLUDE_DIR}/*.hpp")
 
 add_executable(BrutalOps
     ${APP_SOURCES}
+    ${APP_HEADERS}
     ${IMGUI_SOURCES}
 )
 

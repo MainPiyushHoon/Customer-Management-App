@@ -8,7 +8,9 @@ namespace App::Models {
     public:
         OrderItem() = default;
         OrderItem(std::string itemName, int quantity, double unitPrice)
-            : m_itemName(std::move(itemName)), m_quantity(quantity), m_unitPrice(unitPrice) {}
+            : m_itemName(std::move(itemName)),
+              m_quantity(quantity > 0 ? quantity : 1),
+              m_unitPrice(unitPrice >= 0.0 ? unitPrice : 0.0) {}
 
         // Getters
         [[nodiscard]] const std::string& getItemName() const { return m_itemName; }
