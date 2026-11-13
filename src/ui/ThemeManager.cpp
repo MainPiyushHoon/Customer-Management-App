@@ -4,7 +4,7 @@
 namespace App::UI {
 
     ThemeManager::ThemeManager() {
-        // Light Neo-Brutalism Palette
+        // Light Neo-Brutalism Palette (High-Luminance Accents > 0.70 for Pitch Black Typography)
         m_lightPalette = {
             .background       = 0xFFF8FDFD, // Cream/Off-white
             .surfaceCard      = 0xFFFFFFFF, // Pure White
@@ -12,25 +12,29 @@ namespace App::UI {
             .shadow           = 0xFF000000, // Solid Black
             .textPrimary      = 0xFF000000, // Pitch Black
             .textSecondary    = 0xFF555555, // Charcoal
-            .accentYellow     = 0xFF00E6FF, // Electric Yellow (#FFE600 ABGR: FF00E6FF)
-            .accentPink       = 0xFFA76EFF, // Hot Pink (#FF6EA7)
-            .accentCyan       = 0xFFFFF000, // Cyan (#00F0FF)
-            .accentMint       = 0xFF9DFF00, // Mint (#00FF9D)
+            .accentYellow     = ElectricLemon, // Electric Lemon (#FFE600)
+            .accentPink       = SoftCoral,    // Soft Coral (#FFAEBC)
+            .accentCyan       = SkyIce,       // Sky Ice (#A0E7E5)
+            .accentMint       = PastelMint,   // Pastel Mint (#A6FF00)
+            .accentLavender   = SoftLavender, // Soft Lavender (#D7B7FD)
+            .accentCoral      = SoftCoral,    // Soft Coral (#FFAEBC)
             .inputBackground  = 0xFFF0F0F0
         };
 
-        // Cyber Dark Neo-Brutalism Palette
+        // Cyber Dark Neo-Brutalism Palette (Clean #1A1817 off-black cards, crisp light borders, high-luminance accents)
         m_darkPalette = {
             .background       = 0xFF141210, // Deep Charcoal
-            .surfaceCard      = 0xFF1E1918, // Card Surface
+            .surfaceCard      = 0xFF17181A, // Clean Off-Black Card (#1A1817)
             .border           = 0xFFE6E0E0, // Crisp White/Grey Border
             .shadow           = 0xFF000000, // Pitch Black Shadow
             .textPrimary      = 0xFFF7F5F5, // Crisp Off-White
             .textSecondary    = 0xFFAAAAAA, // Muted Grey
-            .accentYellow     = 0xFF00E6FF, // Electric Yellow
-            .accentPink       = 0xFF7A00FF, // Cyber Magenta (#FF007A)
-            .accentCyan       = 0xFFFFE500, // Neon Cyan
-            .accentMint       = 0xFF85FF00, // Neon Green (#00FF85)
+            .accentYellow     = ElectricLemon, // Electric Lemon (#FFE600)
+            .accentPink       = SoftCoral,    // Soft Coral (#FFAEBC - replaces dark magenta #FF007A)
+            .accentCyan       = SkyIce,       // Sky Ice (#A0E7E5)
+            .accentMint       = PastelMint,   // Pastel Mint (#A6FF00)
+            .accentLavender   = SoftLavender, // Soft Lavender (#D7B7FD)
+            .accentCoral      = SoftCoral,    // Soft Coral (#FFAEBC)
             .inputBackground  = 0xFF2A2826
         };
     }

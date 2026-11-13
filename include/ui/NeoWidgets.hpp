@@ -1,9 +1,13 @@
 #pragma once
 
 #include "ui/ThemeManager.hpp"
+#include "imgui.h"
 #include <string>
 
 namespace App::UI::NeoWidgets {
+
+    // Calculates anti-overflow button dimensions (at least text width + 32px padding, height >= 36px)
+    ImVec2 CalculateButtonSize(const char* label, float width = 0.0f, float height = 0.0f);
 
     // Draws a solid rectangular card with a hard 4px offset drop shadow
     void BeginBrutalistCard(const char* strId, float width = 0.0f, float height = 0.0f, uint32_t bgColor = 0);
