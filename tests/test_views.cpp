@@ -420,6 +420,76 @@ int main() {
     TestRunner::assert_equal(confirmedOrderId, order1.getId(), "Confirmed order ID matches deleted order");
     TestRunner::assert_false(deleteOrderModal.isOpen(), "DeleteOrderModalView isOpen() is false after confirm");
 
+    // Re-open and verify CANCEL callback invocation on simulated button click
+    cancelDeleteCalled = false;
+    deleteOrderModal.open(order1.getId(), cust1.getName(), order1.getTotalAmount());
+    TestRunner::assert_true(deleteOrderModal.isOpen(), "DeleteOrderModalView re-opened for CANCEL click simulation");
+
+    // Frame 0: Trigger OpenPopup in ImGui context
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGui::Render();
+
+    // Frame 1: Modal is now open and active, determine position for CANCEL button
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    modalWin = ImGui::FindWindowByName("CONFIRM ORDER DELETION // CRITICAL");
+    TestRunner::assert_true(modalWin != nullptr, "Modal window found for CANCEL button simulation");
+    ImVec2 cancelBtnPos(0, 0);
+    if (modalWin) {
+        // [CONFIRM DELETE] is 180px wide + spacing, [CANCEL] is placed after it (around +250px x-offset)
+        cancelBtnPos = ImVec2(modalWin->Pos.x + 250.0f, modalWin->Pos.y + modalWin->Size.y - 30.0f);
+    }
+    ImGui::Render();
+
+    // Frame 2: Mouse down on CANCEL button
+    io.MousePos = cancelBtnPos;
+    io.MouseDown[0] = true;
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGui::Render();
+
+    // Frame 3: Mouse released on CANCEL button
+    io.MouseDown[0] = false;
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGui::Render();
+
+    TestRunner::assert_true(cancelDeleteCalled, "onCancel callback was invoked on [CANCEL] button click");
+    TestRunner::assert_false(deleteOrderModal.isOpen(), "DeleteOrderModalView isOpen() is false after cancel");
+
     // 11. Cleanup
     ImGui::DestroyContext(ctx);
 

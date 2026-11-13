@@ -34,7 +34,7 @@ namespace App::UI {
 
     struct ToastNotification {
         std::string message;
-        uint32_t bgColor = 0xFF9DFF00;
+        uint32_t bgColor = 0xFF00FFA6;
         float duration = 3.0f;
         float elapsed = 0.0f;
         float alpha = 0.0f;
@@ -46,7 +46,7 @@ namespace App::UI {
         ToastNotificationManager() = default;
 
         // Enqueues a new Neo-Brutalist floating toast notification
-        void showToast(const std::string& message, uint32_t bgColor = 0xFF9DFF00, float duration = 3.0f);
+        void showToast(const std::string& message, uint32_t bgColor = 0xFF00FFA6, float duration = 3.0f);
 
         // Updates elapsed time, smooth slide-in, and fade-out animations for active toasts
         void update(float dt);

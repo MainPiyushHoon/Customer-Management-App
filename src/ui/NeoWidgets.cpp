@@ -72,12 +72,14 @@ namespace App::UI::NeoWidgets {
 
         drawList->AddRectFilled(btnMin, btnMax, effectiveColor, 0.0f);
 
-        // 3. Thick Solid Border (2.5px)
-        uint32_t borderColor = ImGui::GetColorU32(ImGuiCol_Border);
+        // Calculate luminance for contrast logic
+        float lum = ThemeManager::calculateLuminance(effectiveColor);
+
+        // 3. Thick Solid Border (2.5px) - High luminance buttons always get stark black border
+        uint32_t borderColor = (lum > 0.5f) ? 0xFF000000 : ImGui::GetColorU32(ImGuiCol_Border);
         drawList->AddRect(btnMin, btnMax, borderColor, 0.0f, 0, 2.5f);
 
         // 4. Centered Button Label
-        float lum = ThemeManager::calculateLuminance(effectiveColor);
         uint32_t textColor = (lum > 0.5f) ? 0xFF000000 : 0xFFFFFFFF;
 
         const char* textEnd = safeLabel;

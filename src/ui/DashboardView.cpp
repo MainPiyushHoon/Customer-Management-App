@@ -37,12 +37,12 @@ namespace App::UI {
         NeoWidgets::StatCard("TOTAL CUSTOMERS", std::to_string(metrics.totalCustomers), 0xFF00E6FF, "// CLIENTS");
         ImGui::NextColumn();
 
-        NeoWidgets::StatCard("ACTIVE ORDERS", std::to_string(metrics.activeOrders), 0xFFA76EFF, "// WORK ORDERS");
+        NeoWidgets::StatCard("ACTIVE ORDERS", std::to_string(metrics.activeOrders), 0xFFFDB7D7, "// WORK ORDERS");
         ImGui::NextColumn();
 
         char revBuf[64];
         std::snprintf(revBuf, sizeof(revBuf), "$%.2f", metrics.totalRevenue);
-        NeoWidgets::StatCard("COMPLETED REVENUE", revBuf, 0xFF9DFF00, "// COMPLETED");
+        NeoWidgets::StatCard("COMPLETED REVENUE", revBuf, 0xFF00FFA6, "// COMPLETED");
         ImGui::NextColumn();
 
         char pendBuf[64];
@@ -58,7 +58,7 @@ namespace App::UI {
         ImGui::TextUnformatted("OPERATIONAL SHORTCUTS // QUICK ACTIONS");
         ImGui::Spacing();
 
-        if (NeoWidgets::BrutalistButton("+ NEW CUSTOMER", 220.0f, 40.0f, 0xFF9DFF00)) {
+        if (NeoWidgets::BrutalistButton("+ NEW CUSTOMER", 220.0f, 40.0f, 0xFF00FFA6)) {
             if (onAddNewCustomerClick) {
                 onAddNewCustomerClick();
             }
@@ -70,7 +70,7 @@ namespace App::UI {
             }
         }
         ImGui::SameLine();
-        if (NeoWidgets::BrutalistButton(">> MANAGE CUSTOMERS", 240.0f, 40.0f, 0xFFA76EFF)) {
+        if (NeoWidgets::BrutalistButton(">> MANAGE CUSTOMERS", 240.0f, 40.0f, 0xFFFDB7D7)) {
             if (onNavigateTab) {
                 onNavigateTab(ViewTab::Customers);
             }
@@ -138,21 +138,22 @@ namespace App::UI {
                     ImGui::TableSetColumnIndex(5);
                     uint32_t statusColor = 0xFF00E6FF; // Yellow (Pending)
                     switch (ord->getStatus()) {
-                        case Core::OrderStatus::Completed:  statusColor = 0xFF9DFF00; break; // Mint
+                        case Core::OrderStatus::Completed:  statusColor = 0xFF00FFA6; break; // Pastel Mint
                         case Core::OrderStatus::Delivered:  statusColor = 0xFF00FF85; break; // Green
                         case Core::OrderStatus::InProgress: statusColor = 0xFF00D8F6; break; // Cyan
-                        case Core::OrderStatus::Cancelled:  statusColor = 0xFFA76EFF; break; // Pink
+                        case Core::OrderStatus::Cancelled:  statusColor = 0xFFBCAEFF; break; // Soft Coral
                         default: break;
                     }
                     NeoWidgets::BrutalistBadge(Core::OrderStatusToString(ord->getStatus()).c_str(), statusColor);
 
                     ImGui::TableSetColumnIndex(6);
-                    std::string btnId = "VIEW##" + std::to_string(ord->getId());
-                    if (NeoWidgets::BrutalistButton(btnId.c_str(), 70.0f, 26.0f, 0xFF00E6FF)) {
+                    ImGui::PushID(static_cast<int>(ord->getId()));
+                    if (NeoWidgets::BrutalistButton("VIEW", 70.0f, 26.0f, 0xFF00E6FF)) {
                         if (onViewOrderClick) {
                             onViewOrderClick(ord->getId());
                         }
                     }
+                    ImGui::PopID();
                 }
 
                 ImGui::EndTable();

@@ -45,10 +45,14 @@ namespace App::UI {
     // ==========================================
 
     void ToastNotificationManager::showToast(const std::string& message, uint32_t bgColor, float duration) {
+        if (m_toasts.size() >= 5) {
+            m_toasts.erase(m_toasts.begin());
+        }
+
         ToastNotification toast;
         toast.message = message;
         toast.bgColor = bgColor;
-        toast.duration = (duration > 0.0f) ? duration : 3.0f;
+        toast.duration = std::max(duration, 1.0f);
         toast.elapsed = 0.0f;
         toast.alpha = 0.0f;
         toast.yOffset = -50.0f;

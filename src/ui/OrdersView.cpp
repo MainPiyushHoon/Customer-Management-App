@@ -19,7 +19,7 @@ namespace App::UI {
         // Header Action Bar
         ImGui::TextUnformatted("ORDER MANAGEMENT // ALL RECORDS");
         ImGui::SameLine();
-        if (NeoWidgets::BrutalistButton("+ PLACE NEW ORDER", 180.0f, 34.0f, 0xFF9DFF00)) {
+        if (NeoWidgets::BrutalistButton("+ PLACE NEW ORDER", 180.0f, 34.0f, 0xFF00FFA6)) {
             if (onNewOrderClick) {
                 onNewOrderClick();
             }
@@ -129,10 +129,10 @@ namespace App::UI {
                     ImGui::TableSetColumnIndex(5);
                     uint32_t statusColor = 0xFF00E6FF; // Yellow
                     switch (ord->getStatus()) {
-                        case Core::OrderStatus::Completed:  statusColor = 0xFF9DFF00; break; // Mint
+                        case Core::OrderStatus::Completed:  statusColor = 0xFF00FFA6; break; // Pastel Mint
                         case Core::OrderStatus::Delivered:  statusColor = 0xFF00FF85; break; // Green
                         case Core::OrderStatus::InProgress: statusColor = 0xFF00D8F6; break; // Cyan
-                        case Core::OrderStatus::Cancelled:  statusColor = 0xFFA76EFF; break; // Pink
+                        case Core::OrderStatus::Cancelled:  statusColor = 0xFFBCAEFF; break; // Soft Coral
                         default: break;
                     }
                     NeoWidgets::BrutalistBadge(Core::OrderStatusToString(ord->getStatus()).c_str(), statusColor);

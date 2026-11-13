@@ -32,17 +32,22 @@ namespace App::UI {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 255));
 
-        bool popupActive = ImGui::BeginPopupModal("CONFIRM ORDER DELETION // CRITICAL", &m_isOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+        bool popupActive = ImGui::BeginPopupModal("CONFIRM ORDER DELETION // CRITICAL", &m_isOpen, ImGuiWindowFlags_NoResize);
         ImGui::PopStyleColor();
         ImGui::PopStyleVar(2);
 
         if (popupActive) {
-            ImDrawList* bgDrawList = ImGui::GetBackgroundDrawList();
-            if (bgDrawList) {
+            ImDrawList* fgDrawList = ImGui::GetForegroundDrawList();
+            if (fgDrawList) {
                 ImVec2 winPos = ImGui::GetWindowPos();
                 ImVec2 winSize = ImGui::GetWindowSize();
-                bgDrawList->AddRectFilled(
-                    ImVec2(winPos.x + 4.0f, winPos.y + 4.0f),
+                fgDrawList->AddRectFilled(
+                    ImVec2(winPos.x + winSize.x, winPos.y + 4.0f),
+                    ImVec2(winPos.x + winSize.x + 4.0f, winPos.y + winSize.y + 4.0f),
+                    0xFF000000, 0.0f
+                );
+                fgDrawList->AddRectFilled(
+                    ImVec2(winPos.x + 4.0f, winPos.y + winSize.y),
                     ImVec2(winPos.x + winSize.x + 4.0f, winPos.y + winSize.y + 4.0f),
                     0xFF000000, 0.0f
                 );
@@ -63,6 +68,8 @@ namespace App::UI {
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
+
+            ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 52.0f);
 
             if (NeoWidgets::BrutalistButton("[CONFIRM DELETE]", 180.0f, 36.0f, 0xFFBCAEFF)) {
                 if (onConfirmDelete) {

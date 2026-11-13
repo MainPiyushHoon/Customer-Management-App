@@ -60,7 +60,7 @@ namespace App::UI {
             ImGui::SetNextItemWidth(200.0f);
             ImGui::InputText("Phone", m_editPhone, sizeof(m_editPhone));
 
-            if (NeoWidgets::BrutalistButton("SAVE INFO", 110.0f, 30.0f, 0xFF9DFF00)) {
+            if (NeoWidgets::BrutalistButton("SAVE INFO", 110.0f, 30.0f, 0xFF00FFA6)) {
                 customer->setName(m_editName);
                 customer->setPhone(m_editPhone);
                 customerMgr.updateCustomer(*customer);
@@ -85,7 +85,7 @@ namespace App::UI {
         ImGui::SameLine();
 
         // Primary Prominent Save Button
-        if (NeoWidgets::BrutalistButton("SAVE ALL MEASUREMENTS", 220.0f, 32.0f, 0xFF9DFF00)) {
+        if (NeoWidgets::BrutalistButton("SAVE ALL MEASUREMENTS", 220.0f, 32.0f, 0xFF00FFA6)) {
             customerMgr.updateCustomer(*customer);
             if (onSaveCustomerData) {
                 onSaveCustomerData();
@@ -96,7 +96,7 @@ namespace App::UI {
 
         if (m_showSaveSuccessBadge) {
             ImGui::SameLine();
-            NeoWidgets::BrutalistBadge("MEASUREMENTS SAVED ✓", 0xFF9DFF00, 0xFF000000);
+            NeoWidgets::BrutalistBadge("MEASUREMENTS SAVED ✓", 0xFF00FFA6, 0xFF000000);
         }
 
         ImGui::Spacing();
@@ -143,7 +143,7 @@ namespace App::UI {
                 }
 
                 ImGui::TableSetColumnIndex(3);
-                if (NeoWidgets::BrutalistButton("DEL", 70.0f, 26.0f, 0xFFA76EFF)) {
+                if (NeoWidgets::BrutalistButton("DEL", 70.0f, 26.0f, 0xFFBCAEFF)) {
                     removeIndex = static_cast<int>(i);
                 }
 
@@ -185,7 +185,7 @@ namespace App::UI {
         // Customer's Orders Section
         ImGui::TextUnformatted("ORDERS PLACED BY THIS CUSTOMER");
         ImGui::SameLine();
-        if (NeoWidgets::BrutalistButton("+ PLACE NEW ORDER", 180.0f, 30.0f, 0xFF9DFF00)) {
+        if (NeoWidgets::BrutalistButton("+ PLACE NEW ORDER", 180.0f, 30.0f, 0xFF00FFA6)) {
             if (onNewOrderClick) {
                 onNewOrderClick(customer->getId());
             }
@@ -217,10 +217,10 @@ namespace App::UI {
                     ImGui::TableSetColumnIndex(3);
                     uint32_t statusColor = 0xFF00E6FF;
                     switch (ord->getStatus()) {
-                        case Core::OrderStatus::Completed:  statusColor = 0xFF9DFF00; break;
+                        case Core::OrderStatus::Completed:  statusColor = 0xFF00FFA6; break;
                         case Core::OrderStatus::Delivered:  statusColor = 0xFF00FF85; break;
                         case Core::OrderStatus::InProgress: statusColor = 0xFF00D8F6; break;
-                        case Core::OrderStatus::Cancelled:  statusColor = 0xFFA76EFF; break;
+                        case Core::OrderStatus::Cancelled:  statusColor = 0xFFBCAEFF; break;
                         default: break;
                     }
                     NeoWidgets::BrutalistBadge(Core::OrderStatusToString(ord->getStatus()).c_str(), statusColor);

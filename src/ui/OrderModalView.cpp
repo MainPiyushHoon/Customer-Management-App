@@ -166,7 +166,7 @@ namespace App::UI {
             ImGui::InputTextMultiline("Notes / Instructions", m_notes, sizeof(m_notes), ImVec2(-1, 50));
 
             ImGui::Spacing();
-            if (NeoWidgets::BrutalistButton("SAVE ORDER", 140.0f, 36.0f, 0xFF9DFF00)) {
+            if (NeoWidgets::BrutalistButton("SAVE ORDER", 140.0f, 36.0f, 0xFF00FFA6)) {
                 if (m_customerId != 0) {
                     if (m_isEditMode) {
                         auto opt = orderMgr.findByIdMut(m_orderId);

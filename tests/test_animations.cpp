@@ -74,6 +74,19 @@ int main() {
     TestRunner::assert_false(tnm.hasActiveToasts(), "All toasts expired after dwell time");
     TestRunner::assert_equal(tnm.getActiveToastCount(), static_cast<size_t>(0), "Toast count is 0");
 
+    // Test toast duration clamping (minimum 1.0s)
+    tnm.showToast("FAST TOAST", 0xFF00FFA6, 0.2f);
+    TestRunner::assert_equal(tnm.getToasts().back().duration, 1.0f, "Toast duration clamped to minimum 1.0s");
+    tnm.clear();
+
+    // Test toast queue cap (maximum 5 active toasts)
+    for (int i = 1; i <= 6; ++i) {
+        tnm.showToast("TOAST " + std::to_string(i), 0xFF00FFA6, 5.0f);
+    }
+    TestRunner::assert_equal(tnm.getActiveToastCount(), static_cast<size_t>(5), "Toast queue capped at maximum 5 toasts");
+    TestRunner::assert_equal(tnm.getToasts().front().message, std::string("TOAST 2"), "Oldest toast (TOAST 1) dropped on cap limit");
+    tnm.clear();
+
     // 3. Render test (Headless ImGui context)
     ImGuiContext* ctx = ImGui::CreateContext();
     TestRunner::assert_true(ctx != nullptr, "ImGui context created for render verification");

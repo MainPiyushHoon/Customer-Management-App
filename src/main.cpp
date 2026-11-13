@@ -243,7 +243,7 @@ int main() {
 
         ImGui::SameLine();
         // Manual Save Button
-        if (App::UI::NeoWidgets::BrutalistButton("SAVE NOW", 110.0f, 32.0f, 0xFF9DFF00)) {
+        if (App::UI::NeoWidgets::BrutalistButton("SAVE NOW", 110.0f, 32.0f, 0xFF00FFA6)) {
             autoSave.forceSave(performSave);
             toastMgr.showToast("DATA SYNCHRONIZED TO DISK", 0xFF00E6FF);
         }
@@ -322,7 +322,7 @@ int main() {
                 [&]() {
                     // Instant save callback when measurements or customer info are saved
                     performSave();
-                    toastMgr.showToast("MEASUREMENTS SAVED ✓", 0xFF9DFF00);
+                    toastMgr.showToast("MEASUREMENTS SAVED ✓", 0xFF00FFA6);
                 },
                 openDeleteModal
             );
@@ -354,7 +354,7 @@ int main() {
             ImGui::InputText("Full Name", newCustName, sizeof(newCustName));
             ImGui::InputText("Phone Number", newCustPhone, sizeof(newCustPhone));
 
-            if (App::UI::NeoWidgets::BrutalistButton("CREATE", 120.0f, 32.0f, 0xFF9DFF00)) {
+            if (App::UI::NeoWidgets::BrutalistButton("CREATE", 120.0f, 32.0f, 0xFF00FFA6)) {
                 if (newCustName[0] != '\0') {
                     auto& created = customerMgr.createCustomer(newCustName, newCustPhone);
                     selectedCustomerId = created.getId();
@@ -390,7 +390,7 @@ int main() {
                 }
                 performSave();
                 if (isNewOrder) {
-                    toastMgr.showToast("NEW ORDER #" + std::to_string(savedOrd.getId()) + " CREATED", 0xFF9DFF00);
+                    toastMgr.showToast("NEW ORDER #" + std::to_string(savedOrd.getId()) + " CREATED", 0xFF00FFA6);
                 } else {
                     toastMgr.showToast("ORDER #" + std::to_string(savedOrd.getId()) + " UPDATED", 0xFF00E6FF);
                 }
@@ -404,7 +404,7 @@ int main() {
             if (optOrd) {
                 auto optCust = customerMgr.findByIdMut(optOrd->get().getCustomerId());
                 if (optCust) {
-                    optCust->get().removeOrderId(id);
+                    static_cast<void>(optCust->get().removeOrderId(id));
                 }
             }
             orderMgr.deleteOrder(id);
