@@ -1,0 +1,172 @@
+// src/ui/CustomerDetailView.cpp
+#include "ui/CustomerDetailView.hpp"
+#include "ui/NeoWidgets.hpp"
+#include "imgui.h"
+#include <cstring>
+
+namespace App::UI {
+
+    void CustomerDetailView::render(
+        Models::Customer* customer,
+        Services::CustomerManager& customerMgr,
+        Services::OrderManager& orderMgr,
+        const std::function<void(Core::CustomerId)>& onNewOrderClick,
+        const std::function<void(Core::OrderId)>& onEditOrderClick
+    ) {
+        if (!customer) {
+            ImGui::TextDisabled("Select a customer from the left list to view details and measurements.");
+            return;
+        }
+
+        // Customer Header Card
+        NeoWidgets::BeginBrutalistCard("CustHeader", 0.0f, 110.0f, 0xFFFFFFFF);
+        if (!m_isEditingBasicInfo) {
+            ImGui::TextColored(ImVec4(0, 0, 0, 1), "CUSTOMER #%llu: %s", static_cast<unsigned long long>(customer->getId()), customer->getName().c_str());
+            ImGui::Text("PHONE: %s", customer->getPhone().c_str());
+            ImGui::Text("ORDERS PLACED: %zu", customer->getOrderIds().size());
+
+            if (NeoWidgets::BrutalistButton("EDIT INFO", 110.0f, 28.0f, 0xFFFFF000)) {
+                m_isEditingBasicInfo = true;
+                std::strncpy(m_editName, customer->getName().c_str(), sizeof(m_editName) - 1);
+                m_editName[sizeof(m_editName) - 1] = '\0';
+                std::strncpy(m_editPhone, customer->getPhone().c_str(), sizeof(m_editPhone) - 1);
+                m_editPhone[sizeof(m_editPhone) - 1] = '\0';
+            }
+        } else {
+            ImGui::InputText("Name", m_editName, sizeof(m_editName));
+            ImGui::InputText("Phone", m_editPhone, sizeof(m_editPhone));
+            if (NeoWidgets::BrutalistButton("SAVE", 80.0f, 26.0f, 0xFF9DFF00)) {
+                customer->setName(m_editName);
+                customer->setPhone(m_editPhone);
+                customerMgr.updateCustomer(*customer);
+                m_isEditingBasicInfo = false;
+            }
+            ImGui::SameLine();
+            if (NeoWidgets::BrutalistButton("CANCEL", 80.0f, 26.0f)) {
+                m_isEditingBasicInfo = false;
+            }
+        }
+        NeoWidgets::EndBrutalistCard();
+
+        ImGui::Spacing();
+
+        // Editable Measurements Section
+        ImGui::TextColored(ImVec4(0, 0, 0, 1), "MEASUREMENTS (DYNAMIC & EDITABLE)");
+        if (ImGui::BeginTable("MeasTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Measurement Type", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+            ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+            ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+            ImGui::TableHeadersRow();
+
+            int removeIndex = -1;
+            auto& measurements = customer->getMeasurements();
+
+            for (size_t i = 0; i < measurements.size(); ++i) {
+                ImGui::TableNextRow();
+                ImGui::PushID(static_cast<int>(i));
+
+                ImGui::TableSetColumnIndex(0);
+                char keyBuf[64];
+                std::strncpy(keyBuf, measurements[i].getKey().c_str(), sizeof(keyBuf) - 1);
+                keyBuf[sizeof(keyBuf) - 1] = '\0';
+                if (ImGui::InputText("##k", keyBuf, sizeof(keyBuf))) {
+                    measurements[i].setKey(keyBuf);
+                }
+
+                ImGui::TableSetColumnIndex(1);
+                char valBuf[64];
+                std::strncpy(valBuf, measurements[i].getValue().c_str(), sizeof(valBuf) - 1);
+                valBuf[sizeof(valBuf) - 1] = '\0';
+                if (ImGui::InputText("##v", valBuf, sizeof(valBuf))) {
+                    measurements[i].setValue(valBuf);
+                }
+
+                ImGui::TableSetColumnIndex(2);
+                char unitBuf[32];
+                std::strncpy(unitBuf, measurements[i].getUnit().c_str(), sizeof(unitBuf) - 1);
+                unitBuf[sizeof(unitBuf) - 1] = '\0';
+                if (ImGui::InputText("##u", unitBuf, sizeof(unitBuf))) {
+                    measurements[i].setUnit(unitBuf);
+                }
+
+                ImGui::TableSetColumnIndex(3);
+                if (ImGui::Button("DEL")) {
+                    removeIndex = static_cast<int>(i);
+                }
+
+                ImGui::PopID();
+            }
+
+            if (removeIndex >= 0) {
+                customer->removeMeasurement(static_cast<size_t>(removeIndex));
+            }
+
+            ImGui::EndTable();
+        }
+
+        // Add new measurement row
+        ImGui::InputTextWithHint("##newK", "e.g., Inseam", m_newMeasKey, sizeof(m_newMeasKey));
+        ImGui::SameLine();
+        ImGui::InputTextWithHint("##newV", "e.g., 32", m_newMeasVal, sizeof(m_newMeasVal));
+        ImGui::SameLine();
+        ImGui::InputTextWithHint("##newU", "in", m_newMeasUnit, sizeof(m_newMeasUnit));
+        ImGui::SameLine();
+        if (NeoWidgets::BrutalistButton("+ ADD ROW", 100.0f, 30.0f, 0xFF00E6FF)) {
+            if (m_newMeasKey[0] != '\0') {
+                customer->addMeasurement({m_newMeasKey, m_newMeasVal, m_newMeasUnit});
+                m_newMeasKey[0] = '\0';
+                m_newMeasVal[0] = '\0';
+                m_newMeasUnit[0] = '\0';
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        // Customer's Orders Section
+        ImGui::TextColored(ImVec4(0, 0, 0, 1), "ORDERS PLACED BY THIS CUSTOMER");
+        ImGui::SameLine();
+        if (NeoWidgets::BrutalistButton("+ PLACE NEW ORDER", 170.0f, 28.0f, 0xFF9DFF00)) {
+            onNewOrderClick(customer->getId());
+        }
+
+        auto orders = orderMgr.getOrdersForCustomer(customer->getId());
+        if (orders.empty()) {
+            ImGui::TextDisabled("No orders recorded for this customer.");
+        } else {
+            if (ImGui::BeginTable("CustOrdersTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+                ImGui::TableSetupColumn("Order ID", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+                ImGui::TableSetupColumn("Total Amount", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 110.0f);
+                ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+                ImGui::TableHeadersRow();
+
+                for (const auto* ord : orders) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("#%llu", static_cast<unsigned long long>(ord->getId()));
+
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::TextUnformatted(ord->getOrderDate().c_str());
+
+                    ImGui::TableSetColumnIndex(2);
+                    ImGui::Text("$%.2f", ord->getTotalAmount());
+
+                    ImGui::TableSetColumnIndex(3);
+                    ImGui::TextUnformatted(Core::OrderStatusToString(ord->getStatus()).c_str());
+
+                    ImGui::TableSetColumnIndex(4);
+                    ImGui::PushID(static_cast<int>(ord->getId()));
+                    if (ImGui::Button("VIEW")) {
+                        onEditOrderClick(ord->getId());
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::EndTable();
+            }
+        }
+    }
+
+} // namespace App::UI
