@@ -2,6 +2,7 @@
 #include "storage/ExcelStorage.hpp"
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 namespace App::Storage {
 
@@ -19,17 +20,8 @@ namespace App::Storage {
         return result;
     }
 
-    bool ExcelStorage::exportToSpreadsheet(
-        const std::vector<Models::Customer>& customers,
-        const std::vector<Models::Order>& orders,
-        const std::string& destinationPath
-    ) {
-        std::ofstream file(destinationPath);
-        if (!file.is_open()) return false;
-
-        // Section 1: Customers
-        file << "=== CUSTOMERS ===\n";
-        file << "Customer ID,Name,Phone Number,Measurements Summary,Total Orders Placed\n";
+    static void writeCustomersCsv(std::ostream& file, const std::vector<Models::Customer>& customers) {
+        file << "Customer ID,Name,Phone Number,Created At,Measurements Summary,Total Orders Placed\n";
         for (const auto& c : customers) {
             std::ostringstream measStream;
             for (size_t i = 0; i < c.getMeasurements().size(); ++i) {
@@ -42,11 +34,13 @@ namespace App::Storage {
             file << c.getId() << ","
                  << escapeCsv(c.getName()) << ","
                  << escapeCsv(c.getPhone()) << ","
+                 << escapeCsv(c.getCreatedAt()) << ","
                  << escapeCsv(measStream.str()) << ","
                  << c.getOrderIds().size() << "\n";
         }
+    }
 
-        file << "\n=== ORDERS ===\n";
+    static void writeOrdersCsv(std::ostream& file, const std::vector<Models::Order>& orders) {
         file << "Order ID,Customer ID,Customer Name,Date,Items Ordered,Total Amount,Status,Notes\n";
         for (const auto& o : orders) {
             std::ostringstream itemsStream;
@@ -65,18 +59,121 @@ namespace App::Storage {
                  << Core::OrderStatusToString(o.getStatus()) << ","
                  << escapeCsv(o.getNotes()) << "\n";
         }
+    }
 
-        return true;
+    bool ExcelStorage::exportToSpreadsheet(
+        const std::vector<Models::Customer>& customers,
+        const std::vector<Models::Order>& orders,
+        const std::string& destinationPath
+    ) {
+        std::string tmpPath = destinationPath + ".tmp";
+        try {
+            {
+                std::ofstream file(tmpPath);
+                if (!file.is_open()) return false;
+
+                // Section 1: Customers
+                file << "=== CUSTOMERS ===\n";
+                writeCustomersCsv(file, customers);
+
+                // Section 2: Orders
+                file << "\n=== ORDERS ===\n";
+                writeOrdersCsv(file, orders);
+
+                file.flush();
+                if (!file.good()) {
+                    file.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tmpPath, ec);
+                    return false;
+                }
+            }
+
+            std::error_code ec;
+            if (std::filesystem::exists(destinationPath, ec)) {
+                std::filesystem::remove(destinationPath, ec);
+            }
+            std::filesystem::rename(tmpPath, destinationPath, ec);
+            if (ec) {
+                std::filesystem::remove(tmpPath, ec);
+                return false;
+            }
+            return true;
+        } catch (const std::exception& e) {
+            std::error_code ec;
+            std::filesystem::remove(tmpPath, ec);
+            return false;
+        }
     }
 
     bool ExcelStorage::exportCustomersSheet(const std::vector<Models::Customer>& customers, const std::string& filePath) {
-        std::vector<Models::Order> emptyOrders;
-        return exportToSpreadsheet(customers, emptyOrders, filePath);
+        std::string tmpPath = filePath + ".tmp";
+        try {
+            {
+                std::ofstream file(tmpPath);
+                if (!file.is_open()) return false;
+
+                writeCustomersCsv(file, customers);
+
+                file.flush();
+                if (!file.good()) {
+                    file.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tmpPath, ec);
+                    return false;
+                }
+            }
+
+            std::error_code ec;
+            if (std::filesystem::exists(filePath, ec)) {
+                std::filesystem::remove(filePath, ec);
+            }
+            std::filesystem::rename(tmpPath, filePath, ec);
+            if (ec) {
+                std::filesystem::remove(tmpPath, ec);
+                return false;
+            }
+            return true;
+        } catch (const std::exception& e) {
+            std::error_code ec;
+            std::filesystem::remove(tmpPath, ec);
+            return false;
+        }
     }
 
     bool ExcelStorage::exportOrdersSheet(const std::vector<Models::Order>& orders, const std::string& filePath) {
-        std::vector<Models::Customer> emptyCustomers;
-        return exportToSpreadsheet(emptyCustomers, orders, filePath);
+        std::string tmpPath = filePath + ".tmp";
+        try {
+            {
+                std::ofstream file(tmpPath);
+                if (!file.is_open()) return false;
+
+                writeOrdersCsv(file, orders);
+
+                file.flush();
+                if (!file.good()) {
+                    file.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tmpPath, ec);
+                    return false;
+                }
+            }
+
+            std::error_code ec;
+            if (std::filesystem::exists(filePath, ec)) {
+                std::filesystem::remove(filePath, ec);
+            }
+            std::filesystem::rename(tmpPath, filePath, ec);
+            if (ec) {
+                std::filesystem::remove(tmpPath, ec);
+                return false;
+            }
+            return true;
+        } catch (const std::exception& e) {
+            std::error_code ec;
+            std::filesystem::remove(tmpPath, ec);
+            return false;
+        }
     }
 
 } // namespace App::Storage

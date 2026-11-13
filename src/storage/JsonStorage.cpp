@@ -11,12 +11,14 @@
 #endif
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
 using json = nlohmann::json;
 
 namespace App::Storage {
 
     bool JsonStorage::saveCustomers(const std::vector<Models::Customer>& customers, const std::string& destination) {
+        std::string tmpPath = destination + ".tmp";
         try {
             json j = json::array();
             for (const auto& c : customers) {
@@ -39,12 +41,33 @@ namespace App::Storage {
                 j.push_back(custJson);
             }
 
-            std::ofstream file(destination);
-            if (!file.is_open()) return false;
-            file << j.dump(2);
+            {
+                std::ofstream file(tmpPath);
+                if (!file.is_open()) return false;
+                file << j.dump(2);
+                file.flush();
+                if (!file.good()) {
+                    file.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tmpPath, ec);
+                    return false;
+                }
+            }
+
+            std::error_code ec;
+            if (std::filesystem::exists(destination, ec)) {
+                std::filesystem::remove(destination, ec);
+            }
+            std::filesystem::rename(tmpPath, destination, ec);
+            if (ec) {
+                std::filesystem::remove(tmpPath, ec);
+                return false;
+            }
             return true;
         } catch (const std::exception& e) {
             std::cerr << "JsonStorage error saving customers: " << e.what() << "\n";
+            std::error_code ec;
+            std::filesystem::remove(tmpPath, ec);
             return false;
         }
     }
@@ -90,6 +113,7 @@ namespace App::Storage {
     }
 
     bool JsonStorage::saveOrders(const std::vector<Models::Order>& orders, const std::string& destination) {
+        std::string tmpPath = destination + ".tmp";
         try {
             json j = json::array();
             for (const auto& o : orders) {
@@ -113,12 +137,33 @@ namespace App::Storage {
                 j.push_back(orderJson);
             }
 
-            std::ofstream file(destination);
-            if (!file.is_open()) return false;
-            file << j.dump(2);
+            {
+                std::ofstream file(tmpPath);
+                if (!file.is_open()) return false;
+                file << j.dump(2);
+                file.flush();
+                if (!file.good()) {
+                    file.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tmpPath, ec);
+                    return false;
+                }
+            }
+
+            std::error_code ec;
+            if (std::filesystem::exists(destination, ec)) {
+                std::filesystem::remove(destination, ec);
+            }
+            std::filesystem::rename(tmpPath, destination, ec);
+            if (ec) {
+                std::filesystem::remove(tmpPath, ec);
+                return false;
+            }
             return true;
         } catch (const std::exception& e) {
             std::cerr << "JsonStorage error saving orders: " << e.what() << "\n";
+            std::error_code ec;
+            std::filesystem::remove(tmpPath, ec);
             return false;
         }
     }
