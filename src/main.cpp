@@ -7,11 +7,13 @@
 #include "storage/ExcelStorage.hpp"
 #include "storage/AutoSaveCoordinator.hpp"
 #include "ui/ThemeManager.hpp"
+#include "ui/AnimationManager.hpp"
 #include "ui/DashboardView.hpp"
 #include "ui/CustomerListView.hpp"
 #include "ui/CustomerDetailView.hpp"
 #include "ui/OrdersView.hpp"
 #include "ui/OrderModalView.hpp"
+#include "ui/DeleteOrderModalView.hpp"
 #include "ui/NeoWidgets.hpp"
 
 #include <GLFW/glfw3.h>
@@ -134,17 +136,27 @@ int main() {
     themeMgr.setHeaderFont(headerFont);
     themeMgr.applyStyle();
 
+    App::UI::ViewTransitionManager viewTransition;
+    App::UI::ToastNotificationManager toastMgr;
     App::UI::DashboardView dashboardView;
     App::UI::CustomerListView customerListView;
     App::UI::CustomerDetailView customerDetailView;
     App::UI::OrdersView ordersView;
     App::UI::OrderModalView orderModalView;
+    App::UI::DeleteOrderModalView deleteOrderModal;
 
     App::UI::ViewTab currentTab = App::UI::ViewTab::Dashboard;
     App::Core::CustomerId selectedCustomerId = customerMgr.getAllCustomers().empty() ? 0 : customerMgr.getAllCustomers().front().getId();
     bool showAddCustomerDialog = false;
     char newCustName[128] = "";
     char newCustPhone[64] = "";
+
+    auto openDeleteModal = [&](App::Core::OrderId id) {
+        auto optOrd = orderMgr.findById(id);
+        if (optOrd) {
+            deleteOrderModal.open(id, optOrd->get().getCustomerName(), optOrd->get().getTotalAmount());
+        }
+    };
 
     float lastTime = static_cast<float>(glfwGetTime());
 
@@ -163,6 +175,10 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        float dt = ImGui::GetIO().DeltaTime;
+        viewTransition.update(dt);
+        toastMgr.update(dt);
 
         // Fullscreen host window
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -189,15 +205,24 @@ int main() {
         bool isOrd = (currentTab == App::UI::ViewTab::Orders);
 
         if (App::UI::NeoWidgets::BrutalistButton("01 // DASHBOARD", 180.0f, 38.0f, isDash ? 0xFF00E6FF : 0)) {
-            currentTab = App::UI::ViewTab::Dashboard;
+            if (currentTab != App::UI::ViewTab::Dashboard) {
+                currentTab = App::UI::ViewTab::Dashboard;
+                viewTransition.triggerTransition(0.15f);
+            }
         }
         ImGui::SameLine();
         if (App::UI::NeoWidgets::BrutalistButton("02 // CUSTOMERS", 180.0f, 38.0f, isCust ? 0xFF00E6FF : 0)) {
-            currentTab = App::UI::ViewTab::Customers;
+            if (currentTab != App::UI::ViewTab::Customers) {
+                currentTab = App::UI::ViewTab::Customers;
+                viewTransition.triggerTransition(0.15f);
+            }
         }
         ImGui::SameLine();
         if (App::UI::NeoWidgets::BrutalistButton("03 // ORDERS", 160.0f, 38.0f, isOrd ? 0xFF00E6FF : 0)) {
-            currentTab = App::UI::ViewTab::Orders;
+            if (currentTab != App::UI::ViewTab::Orders) {
+                currentTab = App::UI::ViewTab::Orders;
+                viewTransition.triggerTransition(0.15f);
+            }
         }
 
         // Right side of Navbar: Theme Toggle, Save Button, Auto-save Badge
@@ -220,6 +245,7 @@ int main() {
         // Manual Save Button
         if (App::UI::NeoWidgets::BrutalistButton("SAVE NOW", 110.0f, 32.0f, 0xFF9DFF00)) {
             autoSave.forceSave(performSave);
+            toastMgr.showToast("DATA SYNCHRONIZED TO DISK", 0xFF00E6FF);
         }
 
         ImGui::SameLine();
@@ -233,14 +259,31 @@ int main() {
         ImGui::Spacing();
 
         // 2. ACTIVE VIEW CONTENT (BASED ON NAVBAR SELECTION)
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, viewTransition.getAlpha());
+
         if (currentTab == App::UI::ViewTab::Dashboard) {
             auto metrics = App::Services::DashboardStats::compute(customerMgr, orderMgr);
             dashboardView.render(
-                metrics, autoSave, themeMgr,
-                [&]() { autoSave.forceSave(performSave); },
-                [&](App::UI::ViewTab targetTab) { currentTab = targetTab; },
+                metrics,
+                orderMgr,
                 [&]() { showAddCustomerDialog = true; },
-                [&]() { orderModalView.openCreate(0, ""); }
+                [&]() { orderModalView.openCreate(0, ""); },
+                [&](App::UI::ViewTab targetTab) {
+                    if (currentTab != targetTab) {
+                        currentTab = targetTab;
+                        viewTransition.triggerTransition(0.15f);
+                    }
+                },
+                [&](App::Core::OrderId id) {
+                    auto optOrd = orderMgr.findById(id);
+                    if (optOrd) {
+                        orderModalView.openEdit(optOrd->get());
+                    }
+                },
+                [&]() {
+                    autoSave.forceSave(performSave);
+                    toastMgr.showToast("DATA SYNCHRONIZED TO DISK", 0xFF00E6FF);
+                }
             );
         } else if (currentTab == App::UI::ViewTab::Customers) {
             float contentW = ImGui::GetContentRegionAvail().x;
@@ -279,7 +322,9 @@ int main() {
                 [&]() {
                     // Instant save callback when measurements or customer info are saved
                     performSave();
-                }
+                    toastMgr.showToast("MEASUREMENTS SAVED ✓", 0xFF9DFF00);
+                },
+                openDeleteModal
             );
 
             ImGui::Columns(1);
@@ -293,9 +338,12 @@ int main() {
                 },
                 [&]() {
                     orderModalView.openCreate(0, "");
-                }
+                },
+                openDeleteModal
             );
         }
+
+        ImGui::PopStyleVar();
 
         // Add Customer Modal Dialog
         if (showAddCustomerDialog) {
@@ -314,6 +362,7 @@ int main() {
                     newCustPhone[0] = '\0';
                     showAddCustomerDialog = false;
                     performSave();
+                    toastMgr.showToast("NEW CUSTOMER CREATED", 0xFF00E6FF);
                 }
             }
             ImGui::SameLine();
@@ -328,19 +377,45 @@ int main() {
             orderMgr,
             [&](const App::Models::Order& savedOrd) {
                 auto custOpt = customerMgr.findByIdMut(savedOrd.getCustomerId());
+                bool isNewOrder = true;
                 if (custOpt) {
                     auto& cust = custOpt->get();
                     const auto& orderIds = cust.getOrderIds();
                     if (std::find(orderIds.begin(), orderIds.end(), savedOrd.getId()) == orderIds.end()) {
                         cust.addOrderId(savedOrd.getId());
+                        isNewOrder = true;
+                    } else {
+                        isNewOrder = false;
                     }
                 }
                 performSave();
+                if (isNewOrder) {
+                    toastMgr.showToast("NEW ORDER #" + std::to_string(savedOrd.getId()) + " CREATED", 0xFF9DFF00);
+                } else {
+                    toastMgr.showToast("ORDER #" + std::to_string(savedOrd.getId()) + " UPDATED", 0xFF00E6FF);
+                }
             },
             &customerMgr.getAllCustomers()
         );
 
+        // Delete Order Confirmation Modal
+        deleteOrderModal.render([&](App::Core::OrderId id) {
+            auto optOrd = orderMgr.findById(id);
+            if (optOrd) {
+                auto optCust = customerMgr.findByIdMut(optOrd->get().getCustomerId());
+                if (optCust) {
+                    optCust->get().removeOrderId(id);
+                }
+            }
+            orderMgr.deleteOrder(id);
+            performSave();
+            toastMgr.showToast("ORDER #" + std::to_string(id) + " DELETED", 0xFFBCAEFF);
+        });
+
         ImGui::End();
+
+        // 3. RENDER ACTIVE TOAST NOTIFICATIONS OVERLAY
+        toastMgr.render();
 
         // Rendering
         ImGui::Render();
