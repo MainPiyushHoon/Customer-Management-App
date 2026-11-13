@@ -6,6 +6,7 @@ build/
 
 # Testing scratch data
 test_data/
+Testing/
 
 # ImGui settings
 imgui.ini
