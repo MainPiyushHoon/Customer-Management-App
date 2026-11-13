@@ -35,6 +35,7 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
+# Application Sources & Headers (includes AnimationManager, NeoWidgets, ThemeManager, Views, Services)
 file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS "${SRC_DIR}/*.cpp")
 file(GLOB_RECURSE APP_HEADERS CONFIGURE_DEPENDS "${INCLUDE_DIR}/*.hpp")
 

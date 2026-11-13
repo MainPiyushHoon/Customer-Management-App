@@ -18,6 +18,21 @@ namespace TestRunner {
         }
     }
 
+    inline void assert_false(bool condition, const std::string& message) {
+        assert_true(!condition, message);
+    }
+
+    template<typename T, typename U>
+    inline void assert_equal(const T& actual, const U& expected, const std::string& message) {
+        if (actual == expected) {
+            std::cout << "  [PASS] " << message << "\n";
+            passed++;
+        } else {
+            std::cerr << "  [FAIL] " << message << " (expected: " << expected << ", actual: " << actual << ")\n";
+            failed++;
+        }
+    }
+
     inline void assert_near(double actual, double expected, const std::string& message, double eps = 1e-4) {
         if (std::abs(actual - expected) <= eps) {
             std::cout << "  [PASS] " << message << "\n";
