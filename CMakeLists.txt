@@ -5,47 +5,55 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler optimization and warnings
-if(MSVC)
-    add_compile_options(/W4 /permissive-)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+# Enable FetchContent for GLFW
+include(FetchContent)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+)
+FetchContent_MakeAvailable(glfw)
 
 # Directories
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+set(IMGUI_DIR ${THIRD_PARTY_DIR}/imgui)
 
-include_directories(${INCLUDE_DIR} ${THIRD_PARTY_DIR})
-
-# Source definitions
-file(GLOB_RECURSE APP_SOURCES 
-    "${SRC_DIR}/*.cpp"
+set(IMGUI_SOURCES
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-file(GLOB_RECURSE APP_HEADERS 
-    "${INCLUDE_DIR}/*.hpp"
-)
+file(GLOB_RECURSE APP_SOURCES "${SRC_DIR}/*.cpp")
 
-# Executable Target
 add_executable(BrutalOps
     ${APP_SOURCES}
-    ${APP_HEADERS}
+    ${IMGUI_SOURCES}
 )
 
-target_include_directories(BrutalOps PUBLIC 
+target_include_directories(BrutalOps PUBLIC
     ${INCLUDE_DIR}
     ${THIRD_PARTY_DIR}
+    ${IMGUI_DIR}
+    ${IMGUI_DIR}/backends
 )
 
-# Platform Libraries (Windows MinGW / MSYS2)
-if(WIN32)
-    target_link_libraries(BrutalOps PRIVATE
-        opengl32
-        gdi32
-        imm32
-        dwmapi
-        comdlg32
-    )
-endif()
+target_link_libraries(BrutalOps PRIVATE
+    glfw
+    opengl32
+    gdi32
+    imm32
+    dwmapi
+    comdlg32
+)
