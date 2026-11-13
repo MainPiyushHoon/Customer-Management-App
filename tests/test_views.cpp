@@ -144,24 +144,87 @@ int main() {
 
     // 5. Test DashboardView
     App::UI::DashboardView dashboardView;
-    App::Storage::AutoSaveCoordinator autoSave(60);
     auto metrics = App::Services::DashboardStats::compute(customerMgr, orderMgr);
 
     TestRunner::assert_true(metrics.totalCustomers == 2, "DashboardMetrics: 2 customers");
     TestRunner::assert_true(metrics.activeOrders == 1, "DashboardMetrics: 1 active order");
     TestRunner::assert_near(metrics.pendingRevenue, 500.0, "DashboardMetrics: $500.00 pending revenue");
     TestRunner::assert_near(metrics.totalRevenue, 0.0, "DashboardMetrics: $0.00 completed revenue");
-    TestRunner::assert_true(autoSave.getSecondsRemaining() == 60, "AutoSave initial countdown is 60s");
 
+    bool addCustomerClicked = false;
+    bool addOrderClicked = false;
     App::UI::ViewTab navigatedTab = App::UI::ViewTab::Dashboard;
+    App::Core::OrderId viewedOrderId = 0;
+
+    // Render with 1 order present
     ImGui::NewFrame();
+    int frameWithOrders = ImGui::GetCurrentContext()->FrameCount;
     dashboardView.render(
-        metrics, autoSave, themeMgr,
-        []() {},
-        [&](App::UI::ViewTab t) { navigatedTab = t; }
+        metrics, orderMgr,
+        [&]() { addCustomerClicked = true; },
+        [&]() { addOrderClicked = true; },
+        [&](App::UI::ViewTab t) { navigatedTab = t; },
+        [&](App::Core::OrderId id) { viewedOrderId = id; }
     );
     ImGui::Render();
-    TestRunner::assert_true(true, "DashboardView rendered top brand bar, theme toggle, save button, pill, and 4 KPI cards");
+    TestRunner::assert_true(true, "DashboardView rendered 4 KPI cards, quick actions, and recent orders");
+
+    // Verify RecentOrdersTable exists and was active in this frame
+    bool tableActiveWithOrders = false;
+    for (int n = 0; n < ImGui::GetCurrentContext()->Tables.GetMapSize(); n++) {
+        if (ImGuiTable* t = ImGui::GetCurrentContext()->Tables.TryGetMapData(n)) {
+            if (t->ColumnsCount == 7 && t->LastFrameActive == frameWithOrders) {
+                tableActiveWithOrders = true;
+                break;
+            }
+        }
+    }
+    TestRunner::assert_true(tableActiveWithOrders, "RecentOrdersTable (7 columns) was rendered when orders are present");
+
+    // Verify developer persistence card does NOT exist
+    ImGuiWindow* persistCard = ImGui::FindWindowByName("PersistenceInfoCard");
+    TestRunner::assert_true(persistCard == nullptr, "Developer persistence card (DATA STORAGE & PERSISTENCE ENGINE) is NOT rendered");
+
+    // Test zero orders feed
+    App::Services::OrderManager emptyOrderMgr;
+    auto emptyMetrics = App::Services::DashboardStats::compute(customerMgr, emptyOrderMgr);
+    ImGui::NewFrame();
+    int frameWithEmpty = ImGui::GetCurrentContext()->FrameCount;
+    dashboardView.render(emptyMetrics, emptyOrderMgr);
+    ImGui::Render();
+
+    bool tableActiveWithEmpty = false;
+    for (int n = 0; n < ImGui::GetCurrentContext()->Tables.GetMapSize(); n++) {
+        if (ImGuiTable* t = ImGui::GetCurrentContext()->Tables.TryGetMapData(n)) {
+            if (t->ColumnsCount == 7 && t->LastFrameActive == frameWithEmpty) {
+                tableActiveWithEmpty = true;
+                break;
+            }
+        }
+    }
+    TestRunner::assert_false(tableActiveWithEmpty, "RecentOrdersTable is omitted when zero orders exist");
+
+    // Test dashboard with multiple (> 5) orders to verify latest 5 capping
+    App::Services::OrderManager multiOrderMgr;
+    for (int i = 1; i <= 7; ++i) {
+        multiOrderMgr.createOrder(cust1.getId(), cust1.getName(), "2026-11-" + std::to_string(10 + i), {{"Item", 1, 10.0}});
+    }
+    auto multiMetrics = App::Services::DashboardStats::compute(customerMgr, multiOrderMgr);
+    ImGui::NewFrame();
+    int frameWithMulti = ImGui::GetCurrentContext()->FrameCount;
+    dashboardView.render(multiMetrics, multiOrderMgr);
+    ImGui::Render();
+
+    bool tableActiveWithMulti = false;
+    for (int n = 0; n < ImGui::GetCurrentContext()->Tables.GetMapSize(); n++) {
+        if (ImGuiTable* t = ImGui::GetCurrentContext()->Tables.TryGetMapData(n)) {
+            if (t->ColumnsCount == 7 && t->LastFrameActive == frameWithMulti) {
+                tableActiveWithMulti = true;
+                break;
+            }
+        }
+    }
+    TestRunner::assert_true(tableActiveWithMulti, "RecentOrdersTable rendered for multiple orders");
 
     // 6. Test Theme Mode Switching
     themeMgr.toggleMode();
@@ -178,7 +241,7 @@ int main() {
     TestRunner::assert_near(updatedMetrics.pendingRevenue, 0.0, "Updated metrics: $0.00 pending pipeline");
 
     ImGui::NewFrame();
-    dashboardView.render(updatedMetrics, autoSave, themeMgr, []() {});
+    dashboardView.render(updatedMetrics, orderMgr);
     ImGui::Render();
     TestRunner::assert_true(true, "DashboardView re-rendered with updated metrics");
 
