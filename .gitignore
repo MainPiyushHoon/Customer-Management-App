@@ -1,0 +1,18 @@
+# Build artifacts
+build/
+*.exe
+*.o
+*.a
+
+# Testing scratch data
+test_data/
+
+# ImGui settings
+imgui.ini
+
+# Subpowers SDD scratch
+.superpowers/
+
+# Persisted runtime data (exclude exported records from git, keep data dir)
+data/*
+!data/.gitkeep
