@@ -33,9 +33,13 @@ int main() {
     cust.addMeasurement(m);
     TestRunner::assert_true(cust.getMeasurements().size() == 1, "Customer has 1 measurement");
     cust.addOrderId(5001);
-    TestRunner::assert_true(cust.getOrderIds().size() == 1, "Customer has 1 order ID");
-    cust.removeOrderId(5001);
-    TestRunner::assert_true(cust.getOrderIds().empty(), "Customer order ID removed");
+    cust.addOrderId(5002);
+    TestRunner::assert_true(cust.getOrderIds().size() == 2, "Customer has 2 order IDs");
+    TestRunner::assert_true(cust.removeOrderId(5001), "Order 5001 removed from customer");
+    TestRunner::assert_true(!cust.removeOrderId(9999), "Order 9999 not found on customer");
+    TestRunner::assert_equal(cust.getOrderIds().size(), static_cast<size_t>(1), "1 order remains");
+    TestRunner::assert_true(cust.removeOrderId(5002), "Order 5002 removed from customer");
+    TestRunner::assert_true(cust.getOrderIds().empty(), "Customer order IDs empty");
 
     // Test Order
     App::Models::Order order(5001, 1001, "Alice Doe", "2026-11-13 19:00");

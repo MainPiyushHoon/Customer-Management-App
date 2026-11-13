@@ -17,7 +17,8 @@ namespace App::UI {
             Services::OrderManager& orderMgr,
             const std::function<void(Core::CustomerId)>& onNewOrderClick,
             const std::function<void(Core::OrderId)>& onEditOrderClick,
-            const std::function<void()>& onSaveCustomerData = nullptr
+            const std::function<void()>& onSaveCustomerData = nullptr,
+            const std::function<void(Core::OrderId)>& onDeleteOrderClick = nullptr
         );
 
         [[nodiscard]] bool isEditingBasicInfo() const { return m_isEditingBasicInfo; }

@@ -12,7 +12,8 @@ namespace App::UI {
         Services::OrderManager& orderMgr,
         const std::function<void(Core::CustomerId)>& onNewOrderClick,
         const std::function<void(Core::OrderId)>& onEditOrderClick,
-        const std::function<void()>& onSaveCustomerData
+        const std::function<void()>& onSaveCustomerData,
+        const std::function<void(Core::OrderId)>& onDeleteOrderClick
     ) {
         if (!customer) {
             m_currentCustomerId = 0;
@@ -199,7 +200,7 @@ namespace App::UI {
                 ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed, 150.0f);
                 ImGui::TableSetupColumn("Total Amount", ImGuiTableColumnFlags_WidthFixed, 120.0f);
                 ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-                ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 170.0f);
                 ImGui::TableHeadersRow();
 
                 for (const auto* ord : orders) {
@@ -229,6 +230,12 @@ namespace App::UI {
                     if (NeoWidgets::BrutalistButton("VIEW", 70.0f, 24.0f, 0xFF00E6FF)) {
                         if (onEditOrderClick) {
                             onEditOrderClick(ord->getId());
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (NeoWidgets::BrutalistButton("DELETE", 80.0f, 24.0f, 0xFFBCAEFF)) {
+                        if (onDeleteOrderClick) {
+                            onDeleteOrderClick(ord->getId());
                         }
                     }
                     ImGui::PopID();

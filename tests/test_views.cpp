@@ -4,6 +4,7 @@
 #include "ui/DashboardView.hpp"
 #include "ui/OrdersView.hpp"
 #include "ui/OrderModalView.hpp"
+#include "ui/DeleteOrderModalView.hpp"
 #include "ui/NeoWidgets.hpp"
 #include "ui/ThemeManager.hpp"
 #include "services/CustomerManager.hpp"
@@ -11,6 +12,7 @@
 #include "services/DashboardStats.hpp"
 #include "storage/AutoSaveCoordinator.hpp"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include <iostream>
 
 int main() {
@@ -101,6 +103,19 @@ int main() {
     ImGui::Render();
     TestRunner::assert_true(true, "CustomerDetailView renders customer header, measurements table, and orders table");
 
+    // Test rendering with onDeleteOrderClick callback
+    bool custOrderDeleteTriggered = false;
+    ImGui::NewFrame();
+    customerDetailView.render(
+        &cust1, customerMgr, orderMgr,
+        [](App::Core::CustomerId) {},
+        [](App::Core::OrderId) {},
+        [&]() { customerSavedTriggered = true; },
+        [&](App::Core::OrderId) { custOrderDeleteTriggered = true; }
+    );
+    ImGui::Render();
+    TestRunner::assert_true(true, "CustomerDetailView rendered with onDeleteOrderClick callback successfully");
+
     // Test Dynamic Measurements mutations
     cust1.addMeasurement({"Shoulder", "18.5", "in"});
     TestRunner::assert_true(cust1.getMeasurements().size() == 3, "Added 'Shoulder' measurement, total 3");
@@ -183,6 +198,22 @@ int main() {
     ImGui::Render();
     TestRunner::assert_true(true, "OrdersView rendered table and filter bar successfully");
 
+    // Test rendering with onDeleteOrderClick callback
+    bool deleteTriggeredInOrders = false;
+    App::Core::OrderId deleteTargetIdInOrders = 0;
+    ImGui::NewFrame();
+    ordersView.render(
+        customerMgr, orderMgr,
+        [](App::Core::OrderId) {},
+        []() {},
+        [&](App::Core::OrderId id) {
+            deleteTriggeredInOrders = true;
+            deleteTargetIdInOrders = id;
+        }
+    );
+    ImGui::Render();
+    TestRunner::assert_true(true, "OrdersView rendered with onDeleteOrderClick callback successfully");
+
     // 9. Test OrderModalView
     App::UI::OrderModalView orderModalView;
     TestRunner::assert_true(!orderModalView.isOpen(), "OrderModalView is initially closed");
@@ -231,7 +262,102 @@ int main() {
     orderModalView.close();
     TestRunner::assert_true(!orderModalView.isOpen(), "OrderModalView closed cleanly");
 
-    // 10. Cleanup
+    // 10. Test DeleteOrderModalView
+    App::UI::DeleteOrderModalView deleteOrderModal;
+    TestRunner::assert_false(deleteOrderModal.isOpen(), "DeleteOrderModalView is initially closed");
+
+    // Test rendering when modal is closed
+    ImGui::NewFrame();
+    deleteOrderModal.render([](App::Core::OrderId) {});
+    ImGui::Render();
+    TestRunner::assert_false(deleteOrderModal.isOpen(), "DeleteOrderModalView remains closed when not open");
+
+    // Test open()
+    deleteOrderModal.open(order1.getId(), cust1.getName(), order1.getTotalAmount());
+    TestRunner::assert_true(deleteOrderModal.isOpen(), "DeleteOrderModalView is open after open()");
+    TestRunner::assert_equal(deleteOrderModal.getOrderId(), order1.getId(), "DeleteOrderModalView stores order ID");
+    TestRunner::assert_true(deleteOrderModal.getCustomerName() == cust1.getName(), "DeleteOrderModalView stores customer name");
+    TestRunner::assert_near(deleteOrderModal.getTotalAmount(), order1.getTotalAmount(), "DeleteOrderModalView stores total amount");
+
+    // Render open modal in ImGui frame
+    bool confirmDeleteCalled = false;
+    App::Core::OrderId confirmedOrderId = 0;
+    bool cancelDeleteCalled = false;
+
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGui::Render();
+    TestRunner::assert_true(true, "DeleteOrderModalView rendered confirmation dialog in ImGui frame");
+
+    // Test close()
+    deleteOrderModal.close();
+    TestRunner::assert_false(deleteOrderModal.isOpen(), "DeleteOrderModalView is closed after close()");
+
+    // Re-open and verify callback invocation on simulated button click
+    deleteOrderModal.open(order1.getId(), cust1.getName(), order1.getTotalAmount());
+    TestRunner::assert_true(deleteOrderModal.isOpen(), "DeleteOrderModalView re-opened for click simulation");
+
+    // Frame 1: find modal window position and press mouse on CONFIRM DELETE button
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGuiWindow* modalWin = ImGui::FindWindowByName("CONFIRM ORDER DELETION // CRITICAL");
+    TestRunner::assert_true(modalWin != nullptr, "Modal window found by name in ImGui context");
+    ImVec2 btnPos(0, 0);
+    if (modalWin) {
+        btnPos = ImVec2(modalWin->Pos.x + 50.0f, modalWin->Pos.y + modalWin->Size.y - 30.0f);
+    }
+    ImGui::Render();
+
+    // Frame 2: Mouse down on button
+    io.MousePos = btnPos;
+    io.MouseDown[0] = true;
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGui::Render();
+
+    // Frame 3: Mouse released on button
+    io.MouseDown[0] = false;
+    ImGui::NewFrame();
+    deleteOrderModal.render(
+        [&](App::Core::OrderId id) {
+            confirmDeleteCalled = true;
+            confirmedOrderId = id;
+        },
+        [&]() {
+            cancelDeleteCalled = true;
+        }
+    );
+    ImGui::Render();
+
+    TestRunner::assert_true(confirmDeleteCalled, "onConfirmDelete callback was invoked on button click");
+    TestRunner::assert_equal(confirmedOrderId, order1.getId(), "Confirmed order ID matches deleted order");
+    TestRunner::assert_false(deleteOrderModal.isOpen(), "DeleteOrderModalView isOpen() is false after confirm");
+
+    // 11. Cleanup
     ImGui::DestroyContext(ctx);
 
     return TestRunner::summary();

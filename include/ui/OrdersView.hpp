@@ -16,7 +16,8 @@ namespace App::UI {
             Services::CustomerManager& customerMgr,
             Services::OrderManager& orderMgr,
             const std::function<void(Core::OrderId)>& onEditOrderClick,
-            const std::function<void()>& onNewOrderClick
+            const std::function<void()>& onNewOrderClick,
+            const std::function<void(Core::OrderId)>& onDeleteOrderClick = nullptr
         );
 
         [[nodiscard]] int getActiveFilterIndex() const { return m_activeFilterIndex; }

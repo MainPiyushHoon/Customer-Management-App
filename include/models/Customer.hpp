@@ -4,6 +4,7 @@
 #include "models/Measurement.hpp"
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace App::Models {
 
@@ -41,8 +42,13 @@ namespace App::Models {
         // Associated Orders
         [[nodiscard]] const std::vector<Core::OrderId>& getOrderIds() const { return m_orderIds; }
         void addOrderId(Core::OrderId orderId) { m_orderIds.push_back(orderId); }
-        void removeOrderId(Core::OrderId orderId) {
-            std::erase(m_orderIds, orderId);
+        bool removeOrderId(Core::OrderId id) {
+            auto it = std::find(m_orderIds.begin(), m_orderIds.end(), id);
+            if (it != m_orderIds.end()) {
+                m_orderIds.erase(it);
+                return true;
+            }
+            return false;
         }
 
         // Timestamps
