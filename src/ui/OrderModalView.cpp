@@ -107,7 +107,7 @@ namespace App::UI {
                 ImGui::TableSetupColumn("Price", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("Total", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-                ImGui::TableHeadersRow();
+                NeoWidgets::TableHeadersRow();
 
                 int deleteItemIdx = -1;
                 for (size_t i = 0; i < m_lineItems.size(); ++i) {

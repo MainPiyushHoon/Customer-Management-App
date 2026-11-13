@@ -109,7 +109,7 @@ namespace App::UI {
                 ImGui::TableSetupColumn("Total Amount", ImGuiTableColumnFlags_WidthFixed, 120.0f);
                 ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 130.0f);
                 ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 90.0f);
-                ImGui::TableHeadersRow();
+                NeoWidgets::TableHeadersRow();
 
                 for (const auto* ord : recentOrders) {
                     ImGui::TableNextRow();

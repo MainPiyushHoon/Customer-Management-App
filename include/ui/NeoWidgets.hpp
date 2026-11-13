@@ -19,6 +19,9 @@ namespace App::UI::NeoWidgets {
     // Pill badge for order status, customer badges, counters
     void BrutalistBadge(const char* text, uint32_t bgColor, uint32_t textColor = 0xFF000000);
 
+    // Renders table header row with guaranteed high-contrast black text on Electric Lemon background
+    void TableHeadersRow();
+
     // Metric Summary Card (e.g. for dashboard)
     void StatCard(const char* label, const std::string& value, uint32_t accentColor, const char* icon = nullptr);
 

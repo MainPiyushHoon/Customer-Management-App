@@ -100,6 +100,13 @@ namespace App::UI {
         colors[ImGuiCol_Header]            = ImGui::ColorConvertU32ToFloat4(p.accentYellow);
         colors[ImGuiCol_HeaderHovered]     = ImGui::ColorConvertU32ToFloat4(p.accentCyan);
         colors[ImGuiCol_HeaderActive]      = ImGui::ColorConvertU32ToFloat4(p.accentPink);
+
+        // Table styling (Classic Neo-Brutalist Electric Lemon header with solid border)
+        colors[ImGuiCol_TableHeaderBg]     = ImGui::ColorConvertU32ToFloat4(p.accentYellow);
+        colors[ImGuiCol_TableBorderStrong] = ImGui::ColorConvertU32ToFloat4(p.border);
+        colors[ImGuiCol_TableBorderLight]  = ImGui::ColorConvertU32ToFloat4(p.border);
+        colors[ImGuiCol_TableRowBg]        = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+        colors[ImGuiCol_TableRowBgAlt]     = ImGui::ColorConvertU32ToFloat4(p.inputBackground);
     }
 
 } // namespace App::UI

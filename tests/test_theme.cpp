@@ -44,6 +44,13 @@ int main() {
     TestRunner::assert_true(ImGui::GetStyle().WindowBorderSize >= 2.5f, "WindowBorderSize >= 2.5f");
     TestRunner::assert_true(ImGui::GetStyle().ChildBorderSize >= 2.5f, "ChildBorderSize >= 2.5f");
 
+    // Verify TableHeaderBg is styled with Electric Lemon (accentYellow)
+    ImVec4 expectedHeaderBg = ImGui::ColorConvertU32ToFloat4(lightP.accentYellow);
+    TestRunner::assert_true(ImGui::GetStyle().Colors[ImGuiCol_TableHeaderBg].x == expectedHeaderBg.x &&
+                            ImGui::GetStyle().Colors[ImGuiCol_TableHeaderBg].y == expectedHeaderBg.y &&
+                            ImGui::GetStyle().Colors[ImGuiCol_TableHeaderBg].z == expectedHeaderBg.z,
+                            "TableHeaderBg matches Electric Lemon palette accent");
+
     // Toggle to Dark Mode
     theme.toggleMode();
     TestRunner::assert_true(theme.isDark(), "Mode toggled to Dark");

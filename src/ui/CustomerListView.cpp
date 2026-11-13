@@ -34,7 +34,7 @@ namespace App::UI {
             ImGui::TableSetupColumn("Customer Name", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Phone", ImGuiTableColumnFlags_WidthFixed, 140.0f);
             ImGui::TableSetupColumn("Orders", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-            ImGui::TableHeadersRow();
+            NeoWidgets::TableHeadersRow();
 
             for (const auto* c : filtered) {
                 ImGui::TableNextRow();

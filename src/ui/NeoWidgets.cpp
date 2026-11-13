@@ -136,6 +136,12 @@ namespace App::UI::NeoWidgets {
         ImGui::Dummy(boxSize);
     }
 
+    void TableHeadersRow() {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        ImGui::TableHeadersRow();
+        ImGui::PopStyleColor();
+    }
+
     void StatCard(const char* label, const std::string& value, uint32_t accentColor, const char* icon) {
         float lineHeight = ImGui::GetTextLineHeightWithSpacing();
         float neededHeight = 24.0f + lineHeight * 3.0f + 16.0f;
